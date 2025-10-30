@@ -2,8 +2,10 @@ import { Calendar, Clock, BookOpen, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 interface ExamCardProps {
+  id: string;
   title: string;
   subject: string;
   date: string;
@@ -11,7 +13,9 @@ interface ExamCardProps {
   status: "online" | "scheduled" | "completed";
 }
 
-const ExamCard = ({ title, subject, date, time, status }: ExamCardProps) => {
+const ExamCard = ({ id, title, subject, date, time, status }: ExamCardProps) => {
+  const navigate = useNavigate();
+  
   const statusConfig = {
     online: { label: "Online", variant: "default" as const, color: "text-green-500" },
     scheduled: { label: "Scheduled", variant: "secondary" as const, color: "text-yellow-500" },
@@ -19,6 +23,16 @@ const ExamCard = ({ title, subject, date, time, status }: ExamCardProps) => {
   };
 
   const currentStatus = statusConfig[status];
+
+  const handleButtonClick = () => {
+    if (status === "online") {
+      navigate(`/exam/${id}/terms`);
+    } else if (status === "scheduled") {
+      navigate(`/exam/${id}/details`);
+    } else {
+      navigate(`/exam/${id}/results`);
+    }
+  };
 
   return (
     <Card className="hover:shadow-lg transition-all duration-200 border-border bg-card">
@@ -50,6 +64,7 @@ const ExamCard = ({ title, subject, date, time, status }: ExamCardProps) => {
           className="w-full"
           disabled={status === "completed"}
           variant={status === "online" ? "default" : "outline"}
+          onClick={handleButtonClick}
         >
           {status === "online" ? "Start Exam" : status === "scheduled" ? "View Details" : "View Results"}
         </Button>

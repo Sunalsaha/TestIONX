@@ -91,6 +91,68 @@ const QuestionPaperCreator = () => {
     { id: "5", name: "Science Group" },
   ];
 
+  // NEW: Handle image upload
+  const handleImageUpload = (questionId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check if file is an image
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please upload a valid image file!");
+        return;
+      }
+      
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB!");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateQuestion(questionId, "image", reader.result as string);
+        toast.success("Image uploaded successfully!");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // NEW: Handle video upload
+  const handleVideoUpload = (questionId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check if file is a video
+      if (!file.type.startsWith('video/')) {
+        toast.error("Please upload a valid video file!");
+        return;
+      }
+      
+      // Check file size (max 50MB)
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error("Video size should be less than 50MB!");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateQuestion(questionId, "video", reader.result as string);
+        toast.success("Video uploaded successfully!");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // NEW: Remove image
+  const removeImage = (questionId: string) => {
+    updateQuestion(questionId, "image", undefined);
+    toast.success("Image removed!");
+  };
+
+  // NEW: Remove video
+  const removeVideo = (questionId: string) => {
+    updateQuestion(questionId, "video", undefined);
+    toast.success("Video removed!");
+  };
+
   const validateForm = () => {
     if (!examName.trim()) {
       setValidationError("Exam name is required!");
@@ -517,23 +579,79 @@ const QuestionPaperCreator = () => {
                     rows={3}
                   />
 
+                  {/* NEW: Image/Video Upload Buttons with Hidden Inputs */}
                   <div className="flex gap-2 mb-4">
-                    <button className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg glass-card text-blue-600 hover:glow-effect hover:scale-105 active:scale-95 text-xs font-semibold transition-all border border-blue-200/60 hover:border-blue-300 shadow-md">
+                    <input
+                      type="file"
+                      id={`image-upload-${question.id}`}
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(question.id, e)}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor={`image-upload-${question.id}`}
+                      className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg glass-card text-blue-600 hover:glow-effect hover:scale-105 active:scale-95 text-xs font-semibold transition-all border border-blue-200/60 hover:border-blue-300 shadow-md cursor-pointer"
+                    >
                       <ImageIcon className="h-4 w-4" />
-                      Image
-                    </button>
-                    <button className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg glass-card text-purple-600 hover:glow-effect hover:scale-105 active:scale-95 text-xs font-semibold transition-all border border-purple-200/60 hover:border-purple-300 shadow-md">
+                      {question.image ? "Change Image" : "Add Image"}
+                    </label>
+
+                    <input
+                      type="file"
+                      id={`video-upload-${question.id}`}
+                      accept="video/*"
+                      onChange={(e) => handleVideoUpload(question.id, e)}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor={`video-upload-${question.id}`}
+                      className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg glass-card text-purple-600 hover:glow-effect hover:scale-105 active:scale-95 text-xs font-semibold transition-all border border-purple-200/60 hover:border-purple-300 shadow-md cursor-pointer"
+                    >
                       <Video className="h-4 w-4" />
-                      Video
-                    </button>
+                      {question.video ? "Change Video" : "Add Video"}
+                    </label>
                   </div>
+
+                  {/* NEW: Display uploaded image */}
+                  {question.image && (
+                    <div className="mb-4 relative">
+                      <img
+                        src={question.image}
+                        alt="Question visual"
+                        className="w-full max-h-64 object-contain rounded-xl border-2 border-blue-200/60 shadow-lg"
+                      />
+                      <button
+                        onClick={() => removeImage(question.id)}
+                        className="absolute top-2 right-2 p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-110 active:scale-95 shadow-lg"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* NEW: Display uploaded video */}
+                  {question.video && (
+                    <div className="mb-4 relative">
+                      <video
+                        src={question.video}
+                        controls
+                        className="w-full max-h-64 rounded-xl border-2 border-purple-200/60 shadow-lg"
+                      />
+                      <button
+                        onClick={() => removeVideo(question.id)}
+                        className="absolute top-2 right-2 p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all hover:scale-110 active:scale-95 shadow-lg"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <button
                       onClick={() => updateQuestion(question.id, "type", "SAQ")}
                       className={`py-2.5 px-4 rounded-xl font-semibold text-xs transition-all duration-200 ${
                         question.type === "SAQ"
-                          ? "glass-button text-white border-0 shadow-lg hover:scale-105 active:scale-95"
+                          ? "glass-button text-blue-800 border-0 shadow-lg hover:scale-105 active:scale-95"
                           : "glass-card text-blue-600 border border-blue-200/60 hover:border-blue-300 hover:scale-105 active:scale-95"
                       }`}
                     >
@@ -543,7 +661,7 @@ const QuestionPaperCreator = () => {
                       onClick={() => updateQuestion(question.id, "type", "MCQ")}
                       className={`py-2.5 px-4 rounded-xl font-semibold text-xs transition-all duration-200 ${
                         question.type === "MCQ"
-                          ? "glass-button text-white border-0 shadow-lg hover:scale-105 active:scale-95"
+                          ? "glass-button text-blue-800 border-0 shadow-lg hover:scale-105 active:scale-95"
                           : "glass-card text-blue-600 border border-blue-200/60 hover:border-blue-300 hover:scale-105 active:scale-95"
                       }`}
                     >
@@ -667,7 +785,7 @@ const QuestionPaperCreator = () => {
 
               <button
                 onClick={addQuestion}
-                className="w-full py-4 rounded-xl border-2 border-dashed border-blue-300/60 glass-card transition-all flex items-center justify-center gap-2 text-blue-600 font-bold text-sm shadow-lg"
+                className="w-full py-4 rounded-xl border-2 border-dashed border-blue-300/60 glass-card   transition-all flex items-center justify-center gap-2 text-blue-600 font-bold text-sm shadow-lg"
               >
                 <div className="w-9 h-9 rounded-lg glass-button flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
                   <Plus className="h-5 w-5 text-white" />
@@ -736,15 +854,15 @@ const QuestionPaperCreator = () => {
                 <ul className="text-xs text-amber-600 space-y-1.5 font-medium">
                   <li className="flex items-start gap-2">
                     <span className="text-green-500 font-bold flex-shrink-0">✓</span>
-                    <span>Fill all required</span>
+                    <span>Fill all required fields</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-green-500 font-bold flex-shrink-0">✓</span>
-                    <span>Write clearly</span>
+                    <span>Add images/videos to questions</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-green-500 font-bold flex-shrink-0">✓</span>
-                    <span>Set answers</span>
+                    <span>Set correct answers</span>
                   </li>
                 </ul>
               </div>
@@ -753,7 +871,7 @@ const QuestionPaperCreator = () => {
         </div>
       </div>
 
-      {/* Preview Modal */}
+      {/* Preview Modal - Add image/video display in preview */}
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-slide-up" style={{
           background: 'linear-gradient(135deg, rgba(219, 234, 254, 0.95) 0%, rgba(240, 249, 255, 0.98) 50%, rgba(219, 234, 254, 0.95) 100%)',
@@ -879,6 +997,28 @@ const QuestionPaperCreator = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* NEW: Display image in preview */}
+                    {q.image && (
+                      <div className="mb-4 ml-13">
+                        <img
+                          src={q.image}
+                          alt="Question visual"
+                          className="w-full max-h-96 object-contain rounded-xl border-2 border-blue-200/60 shadow-lg"
+                        />
+                      </div>
+                    )}
+
+                    {/* NEW: Display video in preview */}
+                    {q.video && (
+                      <div className="mb-4 ml-13">
+                        <video
+                          src={q.video}
+                          controls
+                          className="w-full max-h-96 rounded-xl border-2 border-purple-200/60 shadow-lg"
+                        />
+                      </div>
+                    )}
 
                     {q.type === "MCQ" && (
                       <div className="ml-13 space-y-3 mt-4">

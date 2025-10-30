@@ -303,7 +303,7 @@ const RoomDetails = ({ roomName, dateCreated, totalStudents, onBack }: RoomDetai
         <Button
           variant="ghost"
           onClick={onBack}
-          className="mb-3 h-8 px-3 text-xs backdrop-blur-xl bg-white/40 border border-white/60 hover:bg-white/60 transition-all"
+          className="mb-3 h-8 px-3 text-xs backdrop-blur-xl bg-white/40 border border-white/60 hover:bg-white/60 transition-all hover:text-slate-800 shadow-md"
         >
           <ArrowLeft className="mr-1 h-3 w-3" />
           Back

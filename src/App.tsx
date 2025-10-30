@@ -9,6 +9,10 @@ import QuestionPaper from "./pages/QuestionPaperCreator";
 import QuestionResults from "./pages/QuestionPaperCreator";
 import AIGenerator from "./pages/AIGenerator";
 import RoomDetails from "./pages/RoomDetails";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import ExamInfo from "./pages/ExamInfo";
+import TakeExam from "./pages/TakeExam";
+import ExamSubmitted from "./pages/ExamSubmitted";
 import NotFound from "./pages/NotFound";
 import Footer from "./components/Footer";
 
@@ -47,12 +51,13 @@ const RoomDetailsWrapper = () => {
 const AppContent = () => {
   const location = useLocation();
   
-  // Hide footer on Login, QuestionPaper, AIGenerator and RoomDetails routes
+  // Hide footer on Login, QuestionPaper, AIGenerator, RoomDetails and all exam routes
   const showFooter = 
     location.pathname !== "/" &&
     location.pathname !== "/question-paper" && 
     location.pathname !== "/ai-generator" &&
-    location.pathname !== "/room-details";
+    location.pathname !== "/room-details" &&
+    !location.pathname.startsWith("/exam/");
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -64,6 +69,13 @@ const AppContent = () => {
           <Route path="/question-results" element={<QuestionResults />} />
           <Route path="/ai-generator" element={<AIGenerator />} />
           <Route path="/room-details" element={<RoomDetailsWrapper />} />
+          
+          {/* Exam Taking Flow Routes */}
+          <Route path="/exam/:examId/terms" element={<TermsAndConditions />} />
+          <Route path="/exam/:examId/info" element={<ExamInfo />} />
+          <Route path="/exam/:examId/take" element={<TakeExam />} />
+          <Route path="/exam/:examId/submitted" element={<ExamSubmitted />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

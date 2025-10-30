@@ -129,7 +129,7 @@ const Dashboard = () => {
                 <CreateRoomDialog />
                 <Button 
                   variant="outline" 
-                  className="gap-2 hover:bg-blue-50 border-blue-200 hover:border-blue-300 transition-all duration-200"
+                  className="gap-2 hover:bg-blue-50 border-blue-200 hover:border-blue-300 hover:text-blue-600 transition-all duration-200"
                   onClick={() => navigate("/question-paper")}
                 >
                   <FileEdit className="h-4 w-4" />
