@@ -131,7 +131,7 @@ const Login = () => {
           {/* Powered by SnapCode */}
           <div className="pt-6 border-t border-blue-200/50 select-none pointer-events-none">
             <p className="text-sm text-slate-600 font-light tracking-wide">
-              Powered by <span className="font-semibold text-blue-600">SnapCode</span>
+              Powered by <span className="font-semibold text-blue-600">Snapcode</span>
             </p>
           </div>
         </div>

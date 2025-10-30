@@ -216,7 +216,7 @@ const Footer = () => {
         >
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-slate-400 text-sm flex items-center gap-1">
-              © 2025 Testonix. Made with <Heart className="h-4 w-4 text-red-500 fill-current inline animate-pulse" /> by Your Team
+              © 2025 Testonix. Made with <Heart className="h-4 w-4 text-red-500 fill-current inline animate-pulse" /> by snapcode
             </p>
             
             <div className="flex gap-6 text-sm">

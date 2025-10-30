@@ -1,14 +1,29 @@
 import { Users, Calendar, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 interface RoomCardProps {
   name: string;
   dateCreated: string;
   participants: number;
+  roomId?: string; // Optional room ID for routing
 }
 
-const RoomCard = ({ name, dateCreated, participants }: RoomCardProps) => {
+const RoomCard = ({ name, dateCreated, participants, roomId }: RoomCardProps) => {
+  const navigate = useNavigate();
+
+  const handleViewDetails = () => {
+    navigate('/room-details', { 
+      state: { 
+        roomName: name, 
+        dateCreated, 
+        totalStudents: participants,
+        roomId: roomId || name.toLowerCase().replace(/\s+/g, '-')
+      } 
+    });
+  };
+
   return (
     <Card 
       className="relative overflow-hidden border-0 group cursor-pointer"
@@ -30,8 +45,8 @@ const RoomCard = ({ name, dateCreated, participants }: RoomCardProps) => {
       <div 
         className="h-1 absolute top-0 left-0 right-0"
         style={{
-          background: '',
-          backgroundSize: '100% 100%',
+          background: 'linear-gradient(90deg, #6366f1 0%, #5cb6f6 50%, #8b5cf6 100%)',
+          backgroundSize: '200% 100%',
           animation: 'gradient-flow 4s linear infinite'
         }}
       />
@@ -95,13 +110,13 @@ const RoomCard = ({ name, dateCreated, participants }: RoomCardProps) => {
           <div 
             className="p-3 rounded-xl shadow-md"
             style={{
-              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)'
+              background: 'linear-gradient(135deg, #5cb6f6ff 0%, #3a9cedff 100%)'
             }}
           >
             <Users className="h-5 w-5 text-white" />
           </div>
           <div className="flex-1">
-            <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-0.5">
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-0.5">
               Total Students
             </p>
             <div className="flex items-center gap-2">
@@ -117,9 +132,10 @@ const RoomCard = ({ name, dateCreated, participants }: RoomCardProps) => {
       
       <CardFooter className="pt-2 pb-6 relative z-10">
         <Button 
+          onClick={handleViewDetails}
           className="w-full h-12 font-bold text-base shadow-xl group-hover:shadow-2xl transition-all duration-300 border-0 rounded-xl relative overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%)',
+            background: 'linear-gradient(135deg, #63c6f1ff 0%, #4f46e5 50%, #4338ca 100%)',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'scale(1.05)';
@@ -132,13 +148,9 @@ const RoomCard = ({ name, dateCreated, participants }: RoomCardProps) => {
         >
           <span className="relative z-10">View Details</span>
           <div 
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-600"
             style={{
               transform: 'translateX(-100%)',
-              transition: 'transform 0.6s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateX(100%)';
             }}
           />
         </Button>

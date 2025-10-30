@@ -3,7 +3,6 @@ import { ArrowLeft, Upload, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-
 const AIGenerator = () => {
   const navigate = useNavigate();
   const [selectedMarks, setSelectedMarks] = useState<number | null>(null);
@@ -11,9 +10,7 @@ const AIGenerator = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
-
   const marksOptions = [1, 2, 3, 4, 5];
-
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -30,7 +27,6 @@ const AIGenerator = () => {
     }
   };
 
-
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
@@ -38,11 +34,9 @@ const AIGenerator = () => {
     }
   };
 
-
   const removeFile = (index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
-
 
   return (
     <div 
@@ -61,7 +55,6 @@ const AIGenerator = () => {
           backdropFilter: 'blur(100px)'
         }}
       />
-
 
       {/* Animated glossy spots */}
       <div 
@@ -86,30 +79,77 @@ const AIGenerator = () => {
         }}
       />
 
-
-      {/* Loading Overlay - 1 second */}
+      {/* Loading Overlay - Whiteish Blue */}
       {isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xl bg-gradient-to-br from-blue-900/80 to-indigo-900/80">
-          <div className="text-center">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xl"
+          style={{
+            background: 'linear-gradient(135deg, rgba(240, 248, 255, 0.98) 0%, rgba(227, 242, 253, 0.98) 25%, rgba(187, 222, 251, 0.98) 50%, rgba(144, 202, 249, 0.98) 75%, rgba(227, 242, 253, 0.98) 100%)',
+            backgroundSize: '400% 400%',
+            animation: 'glossyFlow 8s ease infinite'
+          }}
+        >
+          {/* Subtle glossy overlay for depth */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.6) 0%, transparent 70%)',
+              pointerEvents: 'none'
+            }}
+          />
+          
+          <div className="text-center relative z-10">
             <div 
-              className="w-64 h-64 rounded-3xl p-8 shadow-2xl"
+              className="w-64 h-64 rounded-3xl p-8 shadow-2xl relative overflow-hidden"
               style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(227, 242, 253, 0.95) 100%)'
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 248, 255, 0.95) 100%)',
+                border: '2px solid rgba(255, 255, 255, 0.9)',
+                boxShadow: '0 25px 60px rgba(100, 181, 246, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.9) inset'
               }}
             >
+              {/* Animated shine effect */}
+              <div 
+                className="absolute inset-0 opacity-40"
+                style={{
+                  background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.8) 50%, transparent 70%)',
+                  animation: 'shine 2s infinite'
+                }}
+              />
+              
               <img 
                 src="/5cf67fc8b00a1-unscreen.gif" 
                 alt="Loading" 
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain relative z-10"
               />
             </div>
-            <p className="mt-4 text-lg font-bold text-white drop-shadow-lg">
+            <p 
+              className="mt-6 text-lg font-bold drop-shadow-lg"
+              style={{
+                background: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
               Generating Questions...
             </p>
+            
+            {/* Loading dots animation */}
+            <div className="flex justify-center gap-2 mt-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    background: 'linear-gradient(135deg, #64B5F6 0%, #42A5F5 100%)',
+                    animation: `pulse 1.4s ease-in-out ${i * 0.2}s infinite`
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
       )}
-
 
       <div className="container mx-auto px-4 py-6 relative z-10 flex-grow flex flex-col">
         {/* Header */}
@@ -137,14 +177,11 @@ const AIGenerator = () => {
             </h1>
           </div>
 
-
           <div className="w-24"></div>
         </div>
 
-
         {/* Spacer to push search bar to bottom */}
         <div className="flex-grow"></div>
-
 
         {/* Bottom Section with Marks and Search Bar */}
         <div className="max-w-4xl mx-auto w-full pb-6">
@@ -192,7 +229,6 @@ const AIGenerator = () => {
             </div>
           </div>
 
-
           {/* Uploaded Files Display */}
           {uploadedFiles.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2 justify-center">
@@ -212,7 +248,6 @@ const AIGenerator = () => {
               ))}
             </div>
           )}
-
 
           {/* AI Search Bar - Bottom with Textarea */}
           <div 
@@ -245,7 +280,6 @@ const AIGenerator = () => {
                 </div>
               </label>
 
-
               {/* Textarea Input */}
               <textarea
                 value={searchQuery}
@@ -260,7 +294,6 @@ const AIGenerator = () => {
                 className="flex-grow resize-none text-blue-900 placeholder:text-blue-400 outline-none bg-transparent text-sm font-semibold min-h-[60px] max-h-[120px]"
                 rows={2}
               />
-
 
               {/* Generate Button */}
               <Button
@@ -282,14 +315,12 @@ const AIGenerator = () => {
             </div>
           </div>
 
-
           {/* Helper Text */}
           <p className="text-center text-xs text-blue-600 mt-4 font-semibold drop-shadow-sm">
             Select marks, upload files (optional), and describe what questions you need
           </p>
         </div>
       </div>
-
 
       <style>{`
         @keyframes glossyFlow {
@@ -300,10 +331,23 @@ const AIGenerator = () => {
           0%, 100% { transform: translateY(0px) translateX(0px); }
           50% { transform: translateY(-30px) translateX(20px); }
         }
+        @keyframes shine {
+          0% { transform: translateX(-100%) translateY(-100%); }
+          100% { transform: translateX(100%) translateY(100%); }
+        }
+        @keyframes pulse {
+          0%, 100% { 
+            transform: scale(1); 
+            opacity: 0.5; 
+          }
+          50% { 
+            transform: scale(1.2); 
+            opacity: 1; 
+          }
+        }
       `}</style>
     </div>
   );
 };
-
 
 export default AIGenerator;

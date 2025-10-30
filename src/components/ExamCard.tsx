@@ -51,7 +51,7 @@ const ExamCard = ({ title, subject, date, time, status }: ExamCardProps) => {
           disabled={status === "completed"}
           variant={status === "online" ? "default" : "outline"}
         >
-          {status === "online" ? "Enter Exam" : status === "scheduled" ? "View Details" : "View Results"}
+          {status === "online" ? "Start Exam" : status === "scheduled" ? "View Details" : "View Results"}
         </Button>
       </CardFooter>
     </Card>
