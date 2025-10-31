@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Clock, AlertCircle } from "lucide-react";
+import { Clock, AlertCircle, Pause } from "lucide-react";
 import { toast } from "sonner";
+
+
 
 interface Question {
   id: string;
@@ -15,9 +17,12 @@ interface Question {
   video?: string;
 }
 
+
+
 const TakeExam = () => {
   const navigate = useNavigate();
   const { examId } = useParams();
+  const audioRef = useRef<HTMLAudioElement>(null);
   
   const questions: Question[] = [
     {
@@ -44,6 +49,8 @@ const TakeExam = () => {
     },
   ];
 
+
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [mainTimer, setMainTimer] = useState(7200);
@@ -51,32 +58,141 @@ const TakeExam = () => {
     (questions[0]?.timeLimit || 0) * 60
   );
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [isOnBreak, setIsOnBreak] = useState(false);
+  const [breakTime, setBreakTime] = useState(300); // 5 minutes break
+  const [mainTimerFrozen, setMainTimerFrozen] = useState(false);
+  const [questionTimerFrozen, setQuestionTimerFrozen] = useState(false);
+  const [showOneMinWarning, setShowOneMinWarning] = useState(false);
+  const [oneMinWarningShown, setOneMinWarningShown] = useState(false);
+
+
 
   const currentQuestion = questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
   const answeredCount = Object.keys(answers).length;
 
+
+
+  // Play alert sound
+  const playAlertSound = () => {
+    // Create a simple beep sound using Web Audio API
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800;
+    oscillator.type = "sine";
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+  };
+
+  // Play warning sound (higher frequency)
+  const playWarningSound = () => {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 1200;
+    oscillator.type = "sine";
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.8);
+  };
+
+
+
+  // Handle window visibility change during break
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (isOnBreak && document.hidden) {
+        toast.error("You left the exam during break! Exam will be auto-submitted.", {
+          duration: 5000,
+        });
+        playAlertSound();
+        setTimeout(() => {
+          handleAutoSubmit();
+        }, 2000);
+      }
+    };
+
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isOnBreak) {
+        e.preventDefault();
+        e.returnValue = "";
+        toast.error("You cannot exit during break!");
+        playAlertSound();
+        return false;
+      }
+    };
+
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isOnBreak]);
+
+
+
+  // Check for 1 minute warning
+  useEffect(() => {
+    if (mainTimer === 60 && !oneMinWarningShown && !isOnBreak) {
+      setShowOneMinWarning(true);
+      setOneMinWarningShown(true);
+      playWarningSound();
+    }
+  }, [mainTimer, oneMinWarningShown, isOnBreak]);
+
+
+
+  // Main timer
   useEffect(() => {
     const interval = setInterval(() => {
-      setMainTimer((prev) => {
-        if (prev <= 1) {
-          handleAutoSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
+      if (!mainTimerFrozen) {
+        setMainTimer((prev) => {
+          if (prev <= 1) {
+            handleAutoSubmit();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [mainTimerFrozen]);
 
+
+
+  // Question timer reset
   useEffect(() => {
     if (currentQuestion.timeLimit) {
       setQuestionTimer(currentQuestion.timeLimit * 60);
     }
   }, [currentQuestionIndex]);
 
+
+
+  // Question timer
   useEffect(() => {
-    if (currentQuestion.timeLimit && questionTimer > 0) {
+    if (currentQuestion.timeLimit && questionTimer > 0 && !questionTimerFrozen) {
       const interval = setInterval(() => {
         setQuestionTimer((prev) => {
           if (prev <= 1) {
@@ -91,7 +207,30 @@ const TakeExam = () => {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [questionTimer, currentQuestionIndex]);
+  }, [questionTimer, currentQuestionIndex, questionTimerFrozen]);
+
+
+
+  // Break timer
+  useEffect(() => {
+    if (isOnBreak && breakTime > 0) {
+      const interval = setInterval(() => {
+        setBreakTime((prev) => {
+          if (prev <= 1) {
+            toast.success("Break time over! Resuming exam...");
+            setIsOnBreak(false);
+            setMainTimerFrozen(false);
+            setQuestionTimerFrozen(false);
+            return 300;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isOnBreak, breakTime]);
+
+
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -102,15 +241,21 @@ const TakeExam = () => {
       .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
+
+
   const handleAnswerChange = (value: string) => {
     setAnswers({ ...answers, [currentQuestion.id]: value });
   };
+
+
 
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
+
+
 
   const handleAutoSubmit = () => {
     toast.error("Time's up! Exam auto-submitted.");
@@ -119,9 +264,37 @@ const TakeExam = () => {
     }, 2000);
   };
 
+
+
   const handleSubmit = () => {
     setShowSubmitModal(true);
   };
+
+
+
+  const handleBreak = () => {
+    setIsOnBreak(true);
+    setMainTimerFrozen(true);
+    setQuestionTimerFrozen(true);
+    setBreakTime(300); // Reset to 5 minutes
+    toast.info("Break started. Timers are frozen.");
+  };
+
+
+
+  const handleResumeExam = () => {
+    setIsOnBreak(false);
+    setMainTimerFrozen(false);
+    setQuestionTimerFrozen(false);
+    toast.success("Exam resumed!");
+  };
+
+  const handleContinueExam = () => {
+    setShowOneMinWarning(false);
+    toast.info("Continue with your exam.");
+  };
+
+
 
   const confirmSubmit = () => {
     toast.success("Exam submitted successfully!");
@@ -130,9 +303,10 @@ const TakeExam = () => {
     }, 1500);
   };
 
+
+
   return (
     <div className="h-screen flex flex-col bg-white overflow-hidden select-none">
-      {/* Add this style tag to prevent text selection except in textarea */}
       <style>{`
         * {
           user-select: none;
@@ -146,15 +320,28 @@ const TakeExam = () => {
           -moz-user-select: text !important;
           -ms-user-select: text !important;
         }
+        @keyframes pulse-warning {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.7;
+          }
+        }
+        .animate-pulse-warning {
+          animation: pulse-warning 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
       `}</style>
 
+
+
       {/* Top Bar - Fixed Height */}
-      <div className="bg-slate-800 text-white px-6 py-3 flex items-center justify-between border-b-2 border-slate-900 flex-shrink-0">
+      <div className={`${mainTimer <= 60 && !isOnBreak ? 'bg-red-600' : 'bg-slate-800'} text-white px-6 py-3 flex items-center justify-between border-b-2 ${mainTimer <= 60 && !isOnBreak ? 'border-red-700' : 'border-slate-900'} flex-shrink-0 transition-colors duration-300`}>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
+            <Clock className={`w-4 h-4 ${mainTimer <= 60 && !isOnBreak ? 'animate-pulse' : ''}`} />
             <span className="text-sm font-semibold">Time:</span>
-            <span className="font-mono text-base font-bold">{formatTime(mainTimer)}</span>
+            <span className={`font-mono text-base font-bold ${mainTimer <= 60 && !isOnBreak ? 'animate-pulse' : ''}`}>{formatTime(mainTimer)}</span>
           </div>
           {currentQuestion.timeLimit && (
             <>
@@ -171,6 +358,8 @@ const TakeExam = () => {
           Question {currentQuestionIndex + 1} of {questions.length}
         </div>
       </div>
+
+
 
       {/* Main Content - Flexible Height */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -195,6 +384,8 @@ const TakeExam = () => {
             </div>
           </div>
 
+
+
           {/* Image/Video */}
           {currentQuestion.image && (
             <div className="mb-6 border-2 border-slate-300 p-2 flex-shrink-0">
@@ -206,6 +397,8 @@ const TakeExam = () => {
             </div>
           )}
 
+
+
           {currentQuestion.video && (
             <div className="mb-6 border-2 border-slate-300 p-2 flex-shrink-0">
               <video
@@ -215,6 +408,8 @@ const TakeExam = () => {
               />
             </div>
           )}
+
+
 
           {/* Answer Section - Takes remaining space */}
           <div className="flex-1 flex flex-col min-h-0">
@@ -273,23 +468,35 @@ const TakeExam = () => {
           </div>
         </div>
 
+
+
         {/* Bottom Bar - Fixed Height */}
         <div className="border-t-2 border-slate-200 bg-slate-50 px-8 py-4 flex items-center justify-between flex-shrink-0">
           <div className="text-sm text-slate-600">
             <span className="font-semibold">Answered:</span> {answeredCount} / {questions.length}
           </div>
           <div className="flex gap-3">
+            <Button
+              onClick={handleBreak}
+              disabled={isOnBreak}
+              className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded flex items-center gap-2 disabled:opacity-50"
+            >
+              <Pause className="w-4 h-4" />
+              Break
+            </Button>
             {!isLastQuestion ? (
               <Button
                 onClick={handleNext}
-                className="px-8 py-3 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded"
+                disabled={isOnBreak}
+                className="px-8 py-3 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded disabled:opacity-50"
               >
                 Next Question →
               </Button>
             ) : (
               <Button
                 onClick={handleSubmit}
-                className="px-8 py-3 bg-green-700 hover:bg-green-800 text-white font-semibold rounded"
+                disabled={isOnBreak}
+                className="px-8 py-3 bg-green-700 hover:bg-green-800 text-white font-semibold rounded disabled:opacity-50"
               >
                 Submit Exam
               </Button>
@@ -297,6 +504,101 @@ const TakeExam = () => {
           </div>
         </div>
       </div>
+
+
+
+      {/* 1 Minute Warning Modal */}
+      {showOneMinWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="max-w-md w-full bg-white border-4 border-red-600 shadow-2xl rounded-lg overflow-hidden">
+            <div className="bg-red-600 p-6 text-center border-b-2 border-red-700 animate-pulse-warning">
+              <h2 className="text-3xl font-bold text-white uppercase tracking-wide">⏰ Time Alert</h2>
+            </div>
+            <div className="p-12 text-center">
+              <div className="mb-8">
+                <AlertCircle className="w-20 h-20 text-red-600 mx-auto mb-4 animate-pulse" />
+                <p className="text-2xl font-bold text-red-600 mb-2">
+                  Only 1 Minute Left!
+                </p>
+                <p className="text-sm text-slate-600">
+                  Please wrap up your exam.
+                </p>
+              </div>
+              <div className="bg-red-100 border-2 border-red-300 p-6 mb-8 rounded">
+                <p className="text-lg font-semibold text-red-700">
+                  Time Remaining: {formatTime(mainTimer)}
+                </p>
+                <p className="text-xs text-red-600 mt-2">
+                  Submit your exam before time runs out
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleContinueExam}
+                  className="flex-1 py-4 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded"
+                >
+                  Continue Exam
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  className="flex-1 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded"
+                >
+                  Submit Now
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+      {/* Break Modal - Overlay */}
+      {isOnBreak && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="max-w-md w-full bg-white border-4 border-orange-600 shadow-2xl rounded-lg overflow-hidden animate-pulse">
+            <div className="bg-orange-600 p-6 text-center border-b-2 border-orange-700">
+              <h2 className="text-3xl font-bold text-white uppercase tracking-wide">On Break</h2>
+            </div>
+            <div className="p-12 text-center">
+              <div className="mb-8">
+                <Pause className="w-16 h-16 text-orange-600 mx-auto mb-4" />
+                <p className="text-lg font-semibold text-slate-900 mb-2">
+                  Exam is Paused
+                </p>
+                <p className="text-sm text-slate-600">
+                  All timers are frozen. Take a break!
+                </p>
+              </div>
+              <div className="bg-orange-100 border-2 border-orange-300 p-6 mb-8 rounded">
+                <p className="text-4xl font-bold text-orange-600 font-mono">
+                  {formatTime(breakTime)}
+                </p>
+                <p className="text-sm text-slate-600 mt-2">
+                  Remaining break time
+                </p>
+              </div>
+              <div className="bg-red-50 border-2 border-red-200 p-4 mb-6 rounded">
+                <AlertCircle className="w-5 h-5 text-red-600 mx-auto mb-2" />
+                <p className="text-xs text-red-700 font-semibold">
+                  ⚠️ Do not exit the browser or minimize the window
+                </p>
+                <p className="text-xs text-red-600 mt-1">
+                  If you exit, the exam will be auto-submitted with sound alert
+                </p>
+              </div>
+              <Button
+                onClick={handleResumeExam}
+                className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold text-lg rounded"
+              >
+                Resume Exam
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
 
       {/* Submit Modal */}
       {showSubmitModal && (
@@ -338,8 +640,13 @@ const TakeExam = () => {
           </div>
         </div>
       )}
+
+
+      <audio ref={audioRef} />
     </div>
   );
 };
+
+
 
 export default TakeExam;

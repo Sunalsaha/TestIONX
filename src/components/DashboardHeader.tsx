@@ -13,9 +13,11 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
+
 interface DashboardHeaderProps {
   onMenuClick?: () => void;
 }
+
 
 const DashboardHeader = ({ onMenuClick }: DashboardHeaderProps) => {
   const navigate = useNavigate();
@@ -27,6 +29,15 @@ const DashboardHeader = ({ onMenuClick }: DashboardHeaderProps) => {
     "What's your pain of taking exam?",
     "Let's make your preparation more good for your exam"
   ];
+
+  // Add smooth scrolling behavior
+  useEffect(() => {
+    document.documentElement.style.scrollBehavior = 'smooth';
+    
+    return () => {
+      document.documentElement.style.scrollBehavior = 'auto';
+    };
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -118,6 +129,7 @@ const DashboardHeader = ({ onMenuClick }: DashboardHeaderProps) => {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer">Profile</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer">Result</DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer">Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
@@ -160,5 +172,6 @@ const DashboardHeader = ({ onMenuClick }: DashboardHeaderProps) => {
     </header>
   );
 };
+
 
 export default DashboardHeader;

@@ -1,23 +1,28 @@
 import { useState } from "react";
 import { 
-  ArrowLeft, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Send, 
-  Calendar, 
-  Clock, 
-  Shield, 
-  ImageIcon, 
-  Video,
-  Sparkles,
-  X,
-  ChevronDown,
-  ChevronUp,
-  Timer,
-  Zap,
-  AlertCircle
-} from "lucide-react";
+  MdAdd as Plus,
+  MdDelete as Trash2,
+  MdRemoveRedEye as Eye,
+  MdSend as Send,
+  MdArrowBack as ArrowLeft,
+  MdCalendarMonth as Calendar,
+  MdSecurity as Shield,
+  MdAutoAwesome as Sparkles,
+  MdClose as X,
+  MdExpandMore as ChevronDown,
+  MdExpandLess as ChevronUp,
+  MdFlashOn as Zap,
+  MdWarningAmber as AlertCircle,
+  MdTimer as TimerIcon,
+  MdBreakfastDining as BreakIcon,
+  MdImage as ImageIcon,
+  MdVideoLibrary as Video,
+  MdQuiz as QuizIcon,
+  MdAssignment as AssignmentIcon,
+  MdCheck as CheckIcon
+} from "react-icons/md";
+import { FiSettings as SettingsIcon } from "react-icons/fi";
+import { BiStats as StatsIcon } from "react-icons/bi";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -33,6 +38,11 @@ interface Question {
   image?: string;
   video?: string;
   timeLimit?: number;
+}
+
+interface Break {
+  id: string;
+  breakDuration: number;
 }
 
 interface SecuritySettings {
@@ -54,8 +64,11 @@ const QuestionPaperCreator = () => {
   const [endTime, setEndTime] = useState("");
   const [showDateTimeBar, setShowDateTimeBar] = useState(false);
   const [showSecuritySettings, setShowSecuritySettings] = useState(false);
+  const [showBreakSettings, setShowBreakSettings] = useState(false);
+  const [showDurationSettings, setShowDurationSettings] = useState(false);
   const [totalTimeLimit, setTotalTimeLimit] = useState<number>(0);
   const [showExamSettings, setShowExamSettings] = useState(true);
+  const [breaks, setBreaks] = useState<Break[]>([]);
   
   const [questions, setQuestions] = useState<Question[]>([
     {
@@ -91,17 +104,34 @@ const QuestionPaperCreator = () => {
     { id: "5", name: "Science Group" },
   ];
 
-  // NEW: Handle image upload
+  // Break Functions
+  const addBreak = () => {
+    const newBreak: Break = {
+      id: Date.now().toString(),
+      breakDuration: 5,
+    };
+    setBreaks([...breaks, newBreak]);
+  };
+
+  const removeBreak = (id: string) => {
+    setBreaks(breaks.filter((b) => b.id !== id));
+  };
+
+  const updateBreak = (id: string, field: keyof Break, value: any) => {
+    setBreaks(
+      breaks.map((b) => (b.id === id ? { ...b, [field]: value } : b))
+    );
+  };
+
+  // Handle image upload
   const handleImageUpload = (questionId: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Check if file is an image
       if (!file.type.startsWith('image/')) {
         toast.error("Please upload a valid image file!");
         return;
       }
       
-      // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Image size should be less than 5MB!");
         return;
@@ -116,17 +146,15 @@ const QuestionPaperCreator = () => {
     }
   };
 
-  // NEW: Handle video upload
+  // Handle video upload
   const handleVideoUpload = (questionId: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Check if file is a video
       if (!file.type.startsWith('video/')) {
         toast.error("Please upload a valid video file!");
         return;
       }
       
-      // Check file size (max 50MB)
       if (file.size > 50 * 1024 * 1024) {
         toast.error("Video size should be less than 50MB!");
         return;
@@ -141,13 +169,13 @@ const QuestionPaperCreator = () => {
     }
   };
 
-  // NEW: Remove image
+  // Remove image
   const removeImage = (questionId: string) => {
     updateQuestion(questionId, "image", undefined);
     toast.success("Image removed!");
   };
 
-  // NEW: Remove video
+  // Remove video
   const removeVideo = (questionId: string) => {
     updateQuestion(questionId, "video", undefined);
     toast.success("Video removed!");
@@ -278,15 +306,32 @@ const QuestionPaperCreator = () => {
   };
 
   return (
-    <div className="min-h-screen premium-gradient relative overflow-hidden">
-      {/* Global Scrollbar Hide */}
+    <div className="min-h-screen premium-gradient relative overflow-hidden font-poppins select-none">
+      {/* Global Scrollbar Hide & Selection Disable */}
       <style>{`
         * {
           scrollbar-width: none;
           -ms-overflow-style: none;
+          font-family: 'Poppins', sans-serif;
+          user-select: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
         }
         *::-webkit-scrollbar {
           display: none;
+        }
+        input, textarea, select {
+          user-select: text;
+          -webkit-user-select: text;
+          -moz-user-select: text;
+          -ms-user-select: text;
+        }
+        input[type="checkbox"], input[type="radio"] {
+          user-select: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
         }
       `}</style>
 
@@ -299,7 +344,7 @@ const QuestionPaperCreator = () => {
       {/* Validation Error */}
       {validationError && (
         <div className="fixed top-20 right-6 z-50 animate-slide-down">
-          <div className="glass-card px-6 py-4 rounded-2xl flex items-center gap-3 glow-effect border border-red-400/50 shadow-xl">
+          <div className="glass-card px-6 py-4 rounded-2xl flex items-center gap-3 glow-effect border border-red-400/50 shadow-xl font-poppins">
             <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
             <span className="font-semibold text-red-600 text-sm">{validationError}</span>
           </div>
@@ -308,36 +353,36 @@ const QuestionPaperCreator = () => {
 
       {/* Premium Header */}
       <div className="sticky top-0 z-40 glass border-b border-white/20 shadow-xl">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between font-poppins">
           <Button
             variant="outline"
             onClick={handleBackClick}
-            className="gap-2 glass-card hover:glow-effect hover:scale-105 active:scale-95 transition-all font-semibold px-4 py-2.5 h-auto border-blue-200/60 text-blue-700"
+            className="gap-2 glass-card hover:glow-effect hover:scale-105 active:scale-95 transition-all font-semibold px-4 py-2.5 h-auto border-blue-200/60 text-blue-700 font-poppins"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
 
-          <div className="text-center flex-1 mx-8">
-            <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent flex items-center gap-2 justify-center">
-              <Sparkles className="h-6 w-6 text-blue-500" />
+          <div className="text-center flex-1 mx-8 font-poppins">
+            <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent flex items-center gap-2 justify-center font-poppins">
+              <QuizIcon className="h-6 w-6 text-blue-500" />
               Question Creator
             </h1>
-            <p className="text-xs text-blue-600/70 font-medium mt-1 tracking-wide">Craft Premium Exams with AI Power</p>
+            <p className="text-xs text-blue-600/70 font-medium mt-1 tracking-wide font-poppins">Craft Premium Exams with AI Power</p>
           </div>
 
           <div className="flex gap-3">
             <Button
               onClick={handlePreview}
               variant="outline"
-              className="gap-2 glass-card hover:glow-effect hover:scale-105 active:scale-95 transition-all font-semibold text-sm px-4 py-2.5 h-auto border-blue-200/60 text-blue-700"
+              className="gap-2 glass-card hover:glow-effect hover:scale-105 active:scale-95 transition-all font-semibold text-sm px-4 py-2.5 h-auto border-blue-200/60 text-blue-700 font-poppins"
             >
               <Eye className="h-4 w-4" />
               Preview
             </Button>
             <Button
               onClick={handlePublishClick}
-              className="gap-2 glass-button hover:glow-effect hover:scale-105 active:scale-95 transition-all font-semibold text-sm px-4 py-2.5 h-auto text-white border-0 shadow-lg"
+              className="gap-2 glass-button hover:glow-effect hover:scale-105 active:scale-95 transition-all font-semibold text-sm px-4 py-2.5 h-auto text-white border-0 shadow-lg font-poppins"
             >
               <Send className="h-4 w-4" />
               Publish
@@ -347,23 +392,23 @@ const QuestionPaperCreator = () => {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-8 relative z-10">
-        <div className="grid grid-cols-12 gap-8 items-start">
+      <div className="container mx-auto px-6 py-8 relative z-10 font-poppins h-[calc(100vh-120px)] overflow-hidden">
+        <div className="grid grid-cols-12 gap-8 h-full">
           {/* Left Sidebar - Settings */}
-          <div className="col-span-3">
-            <div className="sticky top-24">
+          <div className="col-span-3 font-poppins overflow-hidden flex flex-col">
+            <div className="sticky top-0 flex-1 overflow-y-auto pr-2">
               {/* Collapsible Header */}
               <button
                 onClick={() => setShowExamSettings(!showExamSettings)}
-                className="w-full glass-card p-4 rounded-2xl border border-blue-100/50 shadow-xl hover:shadow-2xl hover:glow-effect transition-all duration-300 mb-3 flex items-center justify-between"
+                className="w-full glass-card p-4 rounded-2xl border border-blue-100/50 shadow-xl hover:shadow-2xl hover:glow-effect transition-all duration-300 mb-3 flex items-center justify-between font-poppins"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl glass-button flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-500 to-blue-600">
-                    <Shield className="h-5 w-5 text-white" />
+                    <SettingsIcon className="h-5 w-5 text-white" />
                   </div>
                   <div className="text-left">
-                    <h2 className="text-sm font-bold text-blue-700">Exam Settings</h2>
-                    <p className="text-xs text-blue-500/60 font-medium">Configure your exam</p>
+                    <h2 className="text-sm font-bold text-blue-700 font-poppins">Exam Settings</h2>
+                    <p className="text-xs text-blue-500/60 font-medium font-poppins">Configure your exam</p>
                   </div>
                 </div>
                 {showExamSettings ? <ChevronUp className="h-5 w-5 text-blue-500" /> : <ChevronDown className="h-5 w-5 text-blue-500" />}
@@ -371,191 +416,252 @@ const QuestionPaperCreator = () => {
 
               {/* Collapsible Content */}
               {showExamSettings && (
-                <div className="glass-card p-6 rounded-2xl border border-blue-100/50 shadow-xl hover:shadow-2xl transition-all duration-300 max-h-[calc(100vh-200px)] overflow-y-auto animate-slide-down">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-blue-700 mb-2.5 flex items-center gap-1 uppercase tracking-wider">
-                        Exam Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={examName}
-                        onChange={(e) => setExamName(e.target.value)}
-                        placeholder="e.g., Mid-Term Maths"
-                        className="w-full px-4 py-3 rounded-xl border border-blue-200/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-300/30 outline-none glass font-medium transition-all text-sm placeholder-blue-400/50 focus:glow-effect shadow-md"
-                      />
-                    </div>
+                <div className="glass-card p-6 rounded-2xl border border-blue-100/50 shadow-xl hover:shadow-2xl transition-all duration-300 animate-slide-down font-poppins space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-blue-700 mb-2.5 flex items-center gap-1 uppercase tracking-wider font-poppins">
+                      Exam Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={examName}
+                      onChange={(e) => setExamName(e.target.value)}
+                      placeholder="e.g., Mid-Term Maths"
+                      className="w-full px-4 py-3 rounded-xl border border-blue-200/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-300/30 outline-none glass font-medium transition-all text-sm placeholder-blue-400/50 focus:glow-effect shadow-md font-poppins"
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-blue-700 mb-2.5 flex items-center gap-1 uppercase tracking-wider">
-                        Exam Subtitle <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={examSubtitle}
-                        onChange={(e) => setExamSubtitle(e.target.value)}
-                        placeholder="e.g., Chapter 1-5"
-                        className="w-full px-4 py-3 rounded-xl border border-blue-200/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-300/30 outline-none glass font-medium transition-all text-sm placeholder-blue-400/50 focus:glow-effect shadow-md"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-blue-700 mb-2.5 flex items-center gap-1 uppercase tracking-wider font-poppins">
+                      Exam Subtitle <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={examSubtitle}
+                      onChange={(e) => setExamSubtitle(e.target.value)}
+                      placeholder="e.g., Chapter 1-5"
+                      className="w-full px-4 py-3 rounded-xl border border-blue-200/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-300/30 outline-none glass font-medium transition-all text-sm placeholder-blue-400/50 focus:glow-effect shadow-md font-poppins"
+                    />
+                  </div>
 
-                    {/* Date & Time Section */}
-                    <div>
-                      <button
-                        onClick={() => setShowDateTimeBar(!showDateTimeBar)}
-                        className="w-full flex items-center justify-between p-3.5 rounded-xl border border-blue-200/60 glass-card hover:glow-effect hover:scale-105 active:scale-95 transition-all text-sm shadow-md"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-blue-500" />
-                          <span className="font-semibold text-blue-700">Exam Schedule</span>
-                          <span className="text-red-500 font-bold">*</span>
-                        </div>
-                        {showDateTimeBar ? <ChevronUp className="h-4 w-4 text-blue-500" /> : <ChevronDown className="h-4 w-4 text-blue-500" />}
-                      </button>
+                  {/* Date & Time Section */}
+                  <div>
+                    <button
+                      onClick={() => setShowDateTimeBar(!showDateTimeBar)}
+                      className="w-full flex items-center justify-between p-3.5 rounded-xl border border-blue-200/60 glass-card hover:glow-effect hover:scale-105 active:scale-95 transition-all text-sm shadow-md font-poppins"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-blue-500" />
+                        <span className="font-semibold text-blue-700 font-poppins">Exam Schedule</span>
+                        <span className="text-red-500 font-bold">*</span>
+                      </div>
+                      {showDateTimeBar ? <ChevronUp className="h-4 w-4 text-blue-500" /> : <ChevronDown className="h-4 w-4 text-blue-500" />}
+                    </button>
 
-                      {showDateTimeBar && (
-                        <div className="mt-3 p-4 rounded-xl glass-card border border-blue-100/50 animate-slide-down space-y-3 shadow-lg">
-                          <div>
-                            <label className="block text-xs font-semibold text-green-600 mb-2.5 flex items-center gap-1 uppercase tracking-wider">
-                              <Clock className="h-3 w-3" />
-                              Start Date & Time <span className="text-red-500">*</span>
-                            </label>
-                            <div className="grid grid-cols-2 gap-2">
-                              <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="px-3 py-2.5 rounded-lg border border-green-200/60 focus:border-green-400 focus:ring-2 focus:ring-green-300/30 outline-none glass font-medium text-xs shadow-md"
-                              />
-                              <input
-                                type="time"
-                                value={startTime}
-                                onChange={(e) => setStartTime(e.target.value)}
-                                className="px-3 py-2.5 rounded-lg border border-green-200/60 focus:border-green-400 focus:ring-2 focus:ring-green-300/30 outline-none glass font-medium text-xs shadow-md"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-semibold text-red-600 mb-2.5 flex items-center gap-1 uppercase tracking-wider">
-                              <Clock className="h-3 w-3" />
-                              End Date & Time <span className="text-red-500">*</span>
-                            </label>
-                            <div className="grid grid-cols-2 gap-2">
-                              <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="px-3 py-2.5 rounded-lg border border-red-200/60 focus:border-red-400 focus:ring-2 focus:ring-red-300/30 outline-none glass font-medium text-xs shadow-md"
-                              />
-                              <input
-                                type="time"
-                                value={endTime}
-                                onChange={(e) => setEndTime(e.target.value)}
-                                className="px-3 py-2.5 rounded-lg border border-red-200/60 focus:border-red-400 focus:ring-2 focus:ring-red-300/30 outline-none glass font-medium text-xs shadow-md"
-                              />
-                            </div>
+                    {showDateTimeBar && (
+                      <div className="mt-3 p-4 rounded-xl glass-card border border-blue-100/50 animate-slide-down space-y-3 shadow-lg font-poppins">
+                        <div>
+                          <label className="block text-xs font-semibold text-green-600 mb-2.5 flex items-center gap-1 uppercase tracking-wider font-poppins">
+                            <CheckIcon className="h-3 w-3" />
+                            Start Date & Time <span className="text-red-500">*</span>
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="date"
+                              value={startDate}
+                              onChange={(e) => setStartDate(e.target.value)}
+                              className="px-3 py-2.5 rounded-lg border border-green-200/60 focus:border-green-400 focus:ring-2 focus:ring-green-300/30 outline-none glass font-medium text-xs shadow-md font-poppins"
+                            />
+                            <input
+                              type="time"
+                              value={startTime}
+                              onChange={(e) => setStartTime(e.target.value)}
+                              className="px-3 py-2.5 rounded-lg border border-green-200/60 focus:border-green-400 focus:ring-2 focus:ring-green-300/30 outline-none glass font-medium text-xs shadow-md font-poppins"
+                            />
                           </div>
                         </div>
-                      )}
-                    </div>
 
-                    {/* Duration */}
-                    <div>
-                      <label className="block text-xs font-semibold text-purple-700 mb-2.5 flex items-center gap-1 uppercase tracking-wider">
-                        <Timer className="h-3.5 w-3.5" />
-                        Duration (minutes)
-                      </label>
-                      <input
-                        type="number"
-                        value={totalTimeLimit}
-                        onChange={(e) => setTotalTimeLimit(Number(e.target.value))}
-                        placeholder="e.g., 120"
-                        min="0"
-                        className="w-full px-4 py-3 rounded-xl border border-purple-200/60 focus:border-purple-400 focus:ring-2 focus:ring-purple-300/30 outline-none glass font-medium transition-all text-sm placeholder-purple-400/50 shadow-md"
-                      />
-                      {totalTimeLimit > 0 && (
-                        <p className="text-xs text-purple-600 mt-2.5 font-semibold flex items-center gap-1.5 bg-purple-50/40 px-2.5 py-1.5 rounded-lg">
-                          <Zap className="h-3 w-3" />
-                          Auto-submit: {totalTimeLimit} min
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Security Settings */}
-                    <div>
-                      <button
-                        onClick={() => setShowSecuritySettings(!showSecuritySettings)}
-                        className="w-full flex items-center justify-between p-3.5 rounded-xl border border-blue-200/60 glass-card hover:glow-effect hover:scale-105 active:scale-95 transition-all text-sm shadow-md"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4 text-blue-500" />
-                          <span className="font-semibold text-blue-700">Security</span>
+                        <div>
+                          <label className="block text-xs font-semibold text-red-600 mb-2.5 flex items-center gap-1 uppercase tracking-wider font-poppins">
+                            <X className="h-3 w-3" />
+                            End Date & Time <span className="text-red-500">*</span>
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="date"
+                              value={endDate}
+                              onChange={(e) => setEndDate(e.target.value)}
+                              className="px-3 py-2.5 rounded-lg border border-red-200/60 focus:border-red-400 focus:ring-2 focus:ring-red-300/30 outline-none glass font-medium text-xs shadow-md font-poppins"
+                            />
+                            <input
+                              type="time"
+                              value={endTime}
+                              onChange={(e) => setEndTime(e.target.value)}
+                              className="px-3 py-2.5 rounded-lg border border-red-200/60 focus:border-red-400 focus:ring-2 focus:ring-red-300/30 outline-none glass font-medium text-xs shadow-md font-poppins"
+                            />
+                          </div>
                         </div>
-                        {showSecuritySettings ? <ChevronUp className="h-4 w-4 text-blue-500" /> : <ChevronDown className="h-4 w-4 text-blue-500" />}
-                      </button>
+                      </div>
+                    )}
+                  </div>
 
-                      {showSecuritySettings && (
-                        <div className="mt-3 p-4 rounded-xl glass-card border border-blue-100/50 animate-slide-down space-y-2.5 shadow-lg">
-                          {[
-                            { key: 'preventMinimize', label: 'Prevent Minimize' },
-                            { key: 'preventBrowserSwitch', label: 'Block Browser Switch' },
-                            { key: 'enableCamera', label: 'Camera Monitor' },
-                            { key: 'preventCopyPaste', label: 'Block Copy/Paste' },
-                            { key: 'fullScreenMode', label: 'Force Fullscreen' },
-                          ].map((setting) => (
-                            <label 
-                              key={setting.key}
-                              className="flex items-center gap-3 p-2.5 rounded-lg glass-card border border-blue-100/50 hover:border-blue-300 cursor-pointer transition-all hover:glow-effect hover:scale-105 active:scale-95"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={securitySettings[setting.key as keyof SecuritySettings]}
-                                onChange={(e) =>
-                                  setSecuritySettings({
-                                    ...securitySettings,
-                                    [setting.key]: e.target.checked,
-                                  })
-                                }
-                                className="w-4 h-4 text-blue-500 rounded accent-blue-500"
-                              />
-                              <span className="text-xs text-blue-700 font-semibold">
-                                {setting.label}
-                              </span>
-                            </label>
+                  {/* Duration Tab - SEPARATE */}
+                  <div>
+                    <button
+                      onClick={() => setShowDurationSettings(!showDurationSettings)}
+                      className="w-full flex items-center justify-between p-3.5 rounded-xl border border-blue-200/60 glass-card hover:glow-effect hover:scale-105 active:scale-95 transition-all text-sm shadow-md font-poppins"
+                    >
+                      <div className="flex items-center gap-2">
+                        <TimerIcon className="h-4 w-4 text-blue-500" />
+                        <span className="font-semibold text-blue-700 font-poppins">Duration (min)</span>
+                      </div>
+                      {showDurationSettings ? <ChevronUp className="h-4 w-4 text-blue-500" /> : <ChevronDown className="h-4 w-4 text-blue-500" />}
+                    </button>
+
+                    {showDurationSettings && (
+                      <div className="mt-3 p-4 rounded-xl glass-card border border-blue-100/50 animate-slide-down space-y-3 shadow-lg font-poppins">
+                        <input
+                          type="number"
+                          value={totalTimeLimit}
+                          onChange={(e) => setTotalTimeLimit(Number(e.target.value))}
+                          placeholder="e.g., 120"
+                          min="0"
+                          className="w-full px-4 py-3 rounded-xl border border-purple-200/60 focus:border-purple-400 focus:ring-2 focus:ring-purple-300/30 outline-none glass font-medium transition-all text-sm placeholder-purple-400/50 shadow-md font-poppins"
+                        />
+                        {totalTimeLimit > 0 && (
+                          <p className="text-xs text-purple-600 font-semibold flex items-center gap-1.5 bg-purple-50/40 px-2.5 py-1.5 rounded-lg font-poppins">
+                            <Zap className="h-3 w-3" />
+                            Auto-submit: {totalTimeLimit} min
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Break Settings */}
+                  <div>
+                    <button
+                      onClick={() => setShowBreakSettings(!showBreakSettings)}
+                      className="w-full flex items-center justify-between p-3.5 rounded-xl border border-blue-200/60 glass-card hover:glow-effect hover:scale-105 active:scale-95 transition-all text-sm shadow-md font-poppins"
+                    >
+                      <div className="flex items-center gap-2">
+                        <BreakIcon className="h-4 w-4 text-blue-500" />
+                        <span className="font-semibold text-blue-700 font-poppins">Break Time</span>
+                      </div>
+                      {showBreakSettings ? <ChevronUp className="h-4 w-4 text-blue-500" /> : <ChevronDown className="h-4 w-4 text-blue-500" />}
+                    </button>
+
+                    {showBreakSettings && (
+                      <div className="mt-3 p-4 rounded-xl glass-card border border-blue-100/50 animate-slide-down space-y-3 shadow-lg font-poppins">
+                        <div className="space-y-3">
+                          {breaks.map((breakItem) => (
+                            <div key={breakItem.id} className="flex gap-2.5 items-end">
+                              <div className="flex-1">
+                                <label className="block text-xs font-semibold text-blue-700 mb-1.5 uppercase tracking-wide font-poppins">
+                                  Duration (min)
+                                </label>
+                                <input
+                                  type="number"
+                                  value={breakItem.breakDuration}
+                                  onChange={(e) =>
+                                    updateBreak(breakItem.id, "breakDuration", Number(e.target.value))
+                                  }
+                                  min="1"
+                                  className="w-full px-3 py-2.5 rounded-lg border border-blue-200/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-300/30 outline-none glass font-medium text-xs shadow-md font-poppins"
+                                />
+                              </div>
+                              <button
+                                onClick={() => removeBreak(breakItem.id)}
+                                className="p-2 rounded-lg glass-card text-red-500 border border-red-200/60 hover:border-red-400 transition-all hover:glow-effect hover:scale-110 active:scale-95 shadow-md"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
                           ))}
                         </div>
-                      )}
-                    </div>
-
-                    {/* AI Generator Button */}
-                    <Button
-                      onClick={() => navigate("/ai-generator")}
-                      className="w-full gap-2 glow-effect font-semibold py-3 text-sm mt-6 glass-button text-white border-0 shadow-lg hover:scale-105 active:scale-95 transition-all"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      AI Generator
-                    </Button>
+                        <button
+                          onClick={addBreak}
+                          className="w-full text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1.5 glass-card px-3 py-2.5 rounded-lg hover:glow-effect transition-all border border-blue-200/60 hover:border-blue-300 hover:scale-105 active:scale-95 shadow-md font-poppins"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          Add Break
+                        </button>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Security Settings */}
+                  <div>
+                    <button
+                      onClick={() => setShowSecuritySettings(!showSecuritySettings)}
+                      className="w-full flex items-center justify-between p-3.5 rounded-xl border border-blue-200/60 glass-card hover:glow-effect hover:scale-105 active:scale-95 transition-all text-sm shadow-md font-poppins"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-blue-500" />
+                        <span className="font-semibold text-blue-700 font-poppins">Security</span>
+                      </div>
+                      {showSecuritySettings ? <ChevronUp className="h-4 w-4 text-blue-500" /> : <ChevronDown className="h-4 w-4 text-blue-500" />}
+                    </button>
+
+                    {showSecuritySettings && (
+                      <div className="mt-3 p-4 rounded-xl glass-card border border-blue-100/50 animate-slide-down space-y-2.5 shadow-lg font-poppins">
+                        {[
+                          { key: 'preventMinimize', label: 'Prevent Minimize' },
+                          { key: 'preventBrowserSwitch', label: 'Block Browser Switch' },
+                          { key: 'enableCamera', label: 'Camera Monitor' },
+                          { key: 'preventCopyPaste', label: 'Block Copy/Paste' },
+                          { key: 'fullScreenMode', label: 'Force Fullscreen' },
+                        ].map((setting) => (
+                          <label 
+                            key={setting.key}
+                            className="flex items-center gap-3 p-2.5 rounded-lg glass-card border border-blue-100/50 hover:border-blue-300 cursor-pointer transition-all hover:glow-effect hover:scale-105 active:scale-95 font-poppins"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={securitySettings[setting.key as keyof SecuritySettings]}
+                              onChange={(e) =>
+                                setSecuritySettings({
+                                  ...securitySettings,
+                                  [setting.key]: e.target.checked,
+                                })
+                              }
+                              className="w-4 h-4 text-blue-500 rounded accent-blue-500"
+                            />
+                            <span className="text-xs text-blue-700 font-semibold font-poppins">
+                              {setting.label}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* AI Generator Button */}
+                  <Button
+                    onClick={() => navigate("/ai-generator")}
+                    className="w-full gap-2 glow-effect font-semibold py-3 text-sm mt-6 glass-button text-white border-0 shadow-lg hover:scale-105 active:scale-95 transition-all font-poppins"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    AI Generator
+                  </Button>
                 </div>
               )}
             </div>
           </div>
 
           {/* Middle Section - Questions */}
-          <div className="col-span-6 max-h-[calc(100vh-160px)] overflow-y-auto pr-2">
+          <div className="col-span-6 overflow-y-auto pr-2 font-poppins">
             <div className="space-y-4 pb-6">
               {questions.map((question, qIndex) => (
                 <div
                   key={question.id}
-                  className="glass-card p-6 rounded-2xl border border-blue-100/50 relative transition-all hover:glow-effect hover:shadow-2xl shadow-lg"
+                  className="glass-card p-6 rounded-2xl border border-blue-100/50 relative transition-all hover:glow-effect hover:shadow-2xl shadow-lg font-poppins"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl glass-button flex items-center justify-center font-bold text-white text-sm shadow-lg bg-gradient-to-br from-blue-500 to-blue-600">
+                      <div className="w-9 h-9 rounded-xl glass-button flex items-center justify-center font-bold text-white text-sm shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 font-poppins">
                         {qIndex + 1}
                       </div>
-                      <span className="text-sm font-bold text-blue-700 tracking-tight">
+                      <span className="text-sm font-bold text-blue-700 tracking-tight font-poppins">
                         Question {qIndex + 1}
                       </span>
                     </div>
@@ -575,11 +681,11 @@ const QuestionPaperCreator = () => {
                       updateQuestion(question.id, "question", e.target.value)
                     }
                     placeholder="Enter your question here..."
-                    className="w-full px-4 py-3 rounded-xl border border-blue-200/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-300/30 outline-none glass font-medium mb-4 resize-none transition-all text-sm placeholder-blue-400/50 focus:glow-effect shadow-md"
+                    className="w-full px-4 py-3 rounded-xl border border-blue-200/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-300/30 outline-none glass font-medium mb-4 resize-none transition-all text-sm placeholder-blue-400/50 focus:glow-effect shadow-md font-poppins"
                     rows={3}
                   />
 
-                  {/* NEW: Image/Video Upload Buttons with Hidden Inputs */}
+                  {/* Image/Video Upload Buttons */}
                   <div className="flex gap-2 mb-4">
                     <input
                       type="file"
@@ -590,7 +696,7 @@ const QuestionPaperCreator = () => {
                     />
                     <label
                       htmlFor={`image-upload-${question.id}`}
-                      className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg glass-card text-blue-600 hover:glow-effect hover:scale-105 active:scale-95 text-xs font-semibold transition-all border border-blue-200/60 hover:border-blue-300 shadow-md cursor-pointer"
+                      className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg glass-card text-blue-600 hover:glow-effect hover:scale-105 active:scale-95 text-xs font-semibold transition-all border border-blue-200/60 hover:border-blue-300 shadow-md cursor-pointer font-poppins"
                     >
                       <ImageIcon className="h-4 w-4" />
                       {question.image ? "Change Image" : "Add Image"}
@@ -605,14 +711,14 @@ const QuestionPaperCreator = () => {
                     />
                     <label
                       htmlFor={`video-upload-${question.id}`}
-                      className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg glass-card text-purple-600 hover:glow-effect hover:scale-105 active:scale-95 text-xs font-semibold transition-all border border-purple-200/60 hover:border-purple-300 shadow-md cursor-pointer"
+                      className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg glass-card text-purple-600 hover:glow-effect hover:scale-105 active:scale-95 text-xs font-semibold transition-all border border-purple-200/60 hover:border-purple-300 shadow-md cursor-pointer font-poppins"
                     >
                       <Video className="h-4 w-4" />
                       {question.video ? "Change Video" : "Add Video"}
                     </label>
                   </div>
 
-                  {/* NEW: Display uploaded image */}
+                  {/* Display uploaded image */}
                   {question.image && (
                     <div className="mb-4 relative">
                       <img
@@ -629,7 +735,7 @@ const QuestionPaperCreator = () => {
                     </div>
                   )}
 
-                  {/* NEW: Display uploaded video */}
+                  {/* Display uploaded video */}
                   {question.video && (
                     <div className="mb-4 relative">
                       <video
@@ -649,7 +755,7 @@ const QuestionPaperCreator = () => {
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <button
                       onClick={() => updateQuestion(question.id, "type", "SAQ")}
-                      className={`py-2.5 px-4 rounded-xl font-semibold text-xs transition-all duration-200 ${
+                      className={`py-2.5 px-4 rounded-xl font-semibold text-xs transition-all duration-200 font-poppins ${
                         question.type === "SAQ"
                           ? "glass-button text-blue-800 border-0 shadow-lg hover:scale-105 active:scale-95"
                           : "glass-card text-blue-600 border border-blue-200/60 hover:border-blue-300 hover:scale-105 active:scale-95"
@@ -659,7 +765,7 @@ const QuestionPaperCreator = () => {
                     </button>
                     <button
                       onClick={() => updateQuestion(question.id, "type", "MCQ")}
-                      className={`py-2.5 px-4 rounded-xl font-semibold text-xs transition-all duration-200 ${
+                      className={`py-2.5 px-4 rounded-xl font-semibold text-xs transition-all duration-200 font-poppins ${
                         question.type === "MCQ"
                           ? "glass-button text-blue-800 border-0 shadow-lg hover:scale-105 active:scale-95"
                           : "glass-card text-blue-600 border border-blue-200/60 hover:border-blue-300 hover:scale-105 active:scale-95"
@@ -670,10 +776,10 @@ const QuestionPaperCreator = () => {
                   </div>
 
                   {question.type === "MCQ" && (
-                    <div className="mb-4 p-4 rounded-xl glass-card border border-blue-100/50 shadow-md">
+                    <div className="mb-4 p-4 rounded-xl glass-card border border-blue-100/50 shadow-md font-poppins">
                       <div className="flex items-center justify-between mb-4">
-                        <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Options</span>
-                        <label className="flex items-center gap-1.5 text-xs text-blue-600 glass-card px-3 py-1.5 rounded-lg border border-blue-200/60 cursor-pointer hover:glow-effect transition-all">
+                        <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide font-poppins">Options</span>
+                        <label className="flex items-center gap-1.5 text-xs text-blue-600 glass-card px-3 py-1.5 rounded-lg border border-blue-200/60 cursor-pointer hover:glow-effect transition-all font-poppins">
                           <input
                             type="checkbox"
                             checked={question.multipleAnswers}
@@ -686,14 +792,14 @@ const QuestionPaperCreator = () => {
                             }
                             className="w-3.5 h-3.5 text-blue-500 accent-blue-500"
                           />
-                          <span className="font-semibold">Multiple Answers</span>
+                          <span className="font-semibold font-poppins">Multiple Answers</span>
                         </label>
                       </div>
 
                       <div className="space-y-2.5">
                         {question.options.map((option, optIndex) => (
                           <div key={optIndex} className="flex gap-2.5">
-                            <span className="flex items-center justify-center w-9 h-9 rounded-lg glass-button text-white font-bold text-xs flex-shrink-0 shadow-md bg-gradient-to-br from-blue-500 to-blue-600">
+                            <span className="flex items-center justify-center w-9 h-9 rounded-lg glass-button text-white font-bold text-xs flex-shrink-0 shadow-md bg-gradient-to-br from-blue-500 to-blue-600 font-poppins">
                               {String.fromCharCode(65 + optIndex)}
                             </span>
                             <input
@@ -703,7 +809,7 @@ const QuestionPaperCreator = () => {
                                 updateOption(question.id, optIndex, e.target.value)
                               }
                               placeholder={`Option ${optIndex + 1}`}
-                              className="flex-1 px-4 py-2.5 rounded-lg border border-blue-200/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-300/30 outline-none glass font-medium text-xs transition-all placeholder-blue-400/50 shadow-md"
+                              className="flex-1 px-4 py-2.5 rounded-lg border border-blue-200/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-300/30 outline-none glass font-medium text-xs transition-all placeholder-blue-400/50 shadow-md font-poppins"
                             />
                             {question.options.length > 1 && (
                               <button
@@ -719,7 +825,7 @@ const QuestionPaperCreator = () => {
 
                       <button
                         onClick={() => addOption(question.id)}
-                        className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 glass-card px-3 py-2.5 rounded-lg hover:glow-effect transition-all border border-blue-200/60 hover:border-blue-300 hover:scale-105 active:scale-95 shadow-md"
+                        className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 glass-card px-3 py-2.5 rounded-lg hover:glow-effect transition-all border border-blue-200/60 hover:border-blue-300 hover:scale-105 active:scale-95 shadow-md font-poppins"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         Add Option
@@ -727,9 +833,9 @@ const QuestionPaperCreator = () => {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div className="grid grid-cols-2 gap-3 mb-3 font-poppins">
                     <div>
-                      <label className="block text-xs font-semibold text-blue-700 mb-2.5 uppercase tracking-wide">
+                      <label className="block text-xs font-semibold text-blue-700 mb-2.5 uppercase tracking-wide font-poppins">
                         Marks
                       </label>
                       <select
@@ -737,7 +843,7 @@ const QuestionPaperCreator = () => {
                         onChange={(e) =>
                           updateQuestion(question.id, "marks", Number(e.target.value))
                         }
-                        className="w-full px-4 py-2.5 rounded-xl border border-blue-200/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-300/30 outline-none glass font-semibold transition-all text-xs shadow-md accent-blue-500"
+                        className="w-full px-4 py-2.5 rounded-xl border border-blue-200/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-300/30 outline-none glass font-semibold transition-all text-xs shadow-md accent-blue-500 font-poppins"
                       >
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((mark) => (
                           <option key={mark} value={mark}>
@@ -748,9 +854,9 @@ const QuestionPaperCreator = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-orange-700 mb-2.5 flex items-center gap-1 uppercase tracking-wide">
-                        <Clock className="h-3 w-3" />
-                        Time (min)
+                      <label className="block text-xs font-semibold text-orange-700 mb-2.5 flex items-center gap-1 uppercase tracking-wide font-poppins">
+                        <TimerIcon className="h-3 w-3" />
+                        Duration (min)
                       </label>
                       <input
                         type="number"
@@ -760,14 +866,14 @@ const QuestionPaperCreator = () => {
                         }
                         placeholder="minutes"
                         min="0"
-                        className="w-full px-4 py-2.5 rounded-xl border border-orange-200/60 focus:border-orange-400 focus:ring-2 focus:ring-orange-300/30 outline-none glass font-medium transition-all text-xs placeholder-orange-400/50 shadow-md"
+                        className="w-full px-4 py-2.5 rounded-xl border border-orange-200/60 focus:border-orange-400 focus:ring-2 focus:ring-orange-300/30 outline-none glass font-medium transition-all text-xs placeholder-orange-400/50 shadow-md font-poppins"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-green-600 mb-2.5 flex items-center gap-1 uppercase tracking-wide">
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <label className="block text-xs font-semibold text-green-600 mb-2.5 flex items-center gap-1 uppercase tracking-wide font-poppins">
+                      <CheckIcon className="h-3 w-3" />
                       Correct Answer
                     </label>
                     <input
@@ -777,7 +883,7 @@ const QuestionPaperCreator = () => {
                         updateQuestion(question.id, "correctAnswer", e.target.value)
                       }
                       placeholder="Enter the correct answer..."
-                      className="w-full px-4 py-2.5 rounded-xl border border-green-200/60 focus:border-green-400 focus:ring-2 focus:ring-green-300/30 outline-none glass font-medium transition-all text-xs placeholder-green-400/50 shadow-md"
+                      className="w-full px-4 py-2.5 rounded-xl border border-green-200/60 focus:border-green-400 focus:ring-2 focus:ring-green-300/30 outline-none glass font-medium transition-all text-xs placeholder-green-400/50 shadow-md font-poppins"
                     />
                   </div>
                 </div>
@@ -785,7 +891,7 @@ const QuestionPaperCreator = () => {
 
               <button
                 onClick={addQuestion}
-                className="w-full py-4 rounded-xl border-2 border-dashed border-blue-300/60 glass-card   transition-all flex items-center justify-center gap-2 text-blue-600 font-bold text-sm shadow-lg"
+                className="w-full py-4 rounded-xl border-2 border-dashed border-blue-300/60 glass-card transition-all flex items-center justify-center gap-2 text-blue-600 font-bold text-sm shadow-lg font-poppins"
               >
                 <div className="w-9 h-9 rounded-lg glass-button flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
                   <Plus className="h-5 w-5 text-white" />
@@ -796,62 +902,72 @@ const QuestionPaperCreator = () => {
           </div>
 
           {/* Right Sidebar - Stats */}
-          <div className="col-span-3">
-            <div className="sticky top-24 glass-card p-4 rounded-2xl border border-blue-100/50 shadow-xl hover:shadow-2xl hover:glow-effect transition-all duration-300">
+          <div className="col-span-3 font-poppins overflow-hidden flex flex-col">
+            <div className="sticky top-0 overflow-y-auto glass-card p-4 rounded-2xl border border-blue-100/50 shadow-xl hover:shadow-2xl hover:glow-effect transition-all duration-300">
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-9 h-9 rounded-lg glass-button flex items-center justify-center text-base shadow-lg bg-gradient-to-br from-green-500 to-emerald-600">
-                  📊
+                  <StatsIcon className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xs font-bold text-blue-700">Exam Stats</h2>
-                  <p className="text-xs text-blue-500/60 font-medium leading-none">Overview</p>
+                  <h2 className="text-xs font-bold text-blue-700 font-poppins">Exam Stats</h2>
+                  <p className="text-xs text-blue-500/60 font-medium leading-none font-poppins">Overview</p>
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 font-poppins">
                 <div className="p-3 rounded-lg glass-card border border-blue-100/50 hover:glow-effect hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-md">
-                  <div className="text-xs text-blue-600 font-semibold mb-1 uppercase tracking-tight">Questions</div>
-                  <div className="text-2xl font-black text-blue-700">{questions.length}</div>
+                  <div className="text-xs text-blue-600 font-semibold mb-1 uppercase tracking-tight font-poppins">Questions</div>
+                  <div className="text-2xl font-black text-blue-700 font-poppins">{questions.length}</div>
                 </div>
 
                 <div className="p-3 rounded-lg glass-card border border-purple-100/50 hover:glow-effect hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-md">
-                  <div className="text-xs text-purple-600 font-semibold mb-1 uppercase tracking-tight">Total Marks</div>
-                  <div className="text-2xl font-black text-purple-700">
+                  <div className="text-xs text-purple-600 font-semibold mb-1 uppercase tracking-tight font-poppins">Total Marks</div>
+                  <div className="text-2xl font-black text-purple-700 font-poppins">
                     {questions.reduce((sum, q) => sum + q.marks, 0)}
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg glass-card border border-pink-100/50 hover:glow-effect hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-md">
-                  <div className="text-xs text-pink-600 font-semibold mb-1 uppercase tracking-tight">MCQs</div>
-                  <div className="text-2xl font-black text-pink-700">
+                  <div className="text-xs text-pink-600 font-semibold mb-1 uppercase tracking-tight font-poppins">MCQs</div>
+                  <div className="text-2xl font-black text-pink-700 font-poppins">
                     {questions.filter((q) => q.type === "MCQ").length}
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg glass-card border border-cyan-100/50 hover:glow-effect hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-md">
-                  <div className="text-xs text-cyan-600 font-semibold mb-1 uppercase tracking-tight">SAQs</div>
-                  <div className="text-2xl font-black text-cyan-700">
+                  <div className="text-xs text-cyan-600 font-semibold mb-1 uppercase tracking-tight font-poppins">SAQs</div>
+                  <div className="text-2xl font-black text-cyan-700 font-poppins">
                     {questions.filter((q) => q.type === "SAQ").length}
                   </div>
                 </div>
 
                 {totalTimeLimit > 0 && (
                   <div className="p-3 rounded-lg glass-card border border-orange-100/50 hover:glow-effect hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-md">
-                    <div className="text-xs text-orange-600 font-semibold mb-1 flex items-center gap-1 uppercase tracking-tight">
-                      <Timer className="h-3 w-3" />
+                    <div className="text-xs text-orange-600 font-semibold mb-1 flex items-center gap-1 uppercase tracking-tight font-poppins">
+                      <TimerIcon className="h-3 w-3" />
                       Duration
                     </div>
-                    <div className="text-2xl font-black text-orange-700">{totalTimeLimit}</div>
-                    <div className="text-xs text-orange-500/70 font-medium mt-0.5">minutes</div>
+                    <div className="text-2xl font-black text-orange-700 font-poppins">{totalTimeLimit}</div>
+                    <div className="text-xs text-orange-500/70 font-medium mt-0.5 font-poppins">minutes</div>
+                  </div>
+                )}
+
+                {breaks.length > 0 && (
+                  <div className="p-3 rounded-lg glass-card border border-teal-100/50 hover:glow-effect hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-md">
+                    <div className="text-xs text-teal-600 font-semibold mb-1 flex items-center gap-1 uppercase tracking-tight font-poppins">
+                      <BreakIcon className="h-3 w-3" />
+                      Breaks
+                    </div>
+                    <div className="text-2xl font-black text-teal-700 font-poppins">{breaks.length}</div>
                   </div>
                 )}
               </div>
 
-              <div className="mt-4 p-3 rounded-lg glass-card border border-amber-100/50 shadow-md">
-                <h3 className="text-xs font-bold text-amber-700 mb-2.5 flex items-center gap-1.5 uppercase tracking-tight">
-                  <span>💡</span> Tips
+              <div className="mt-4 p-3 rounded-lg glass-card border border-amber-100/50 shadow-md font-poppins">
+                <h3 className="text-xs font-bold text-amber-700 mb-2.5 flex items-center gap-1.5 uppercase tracking-tight font-poppins">
+                  <Sparkles className="h-4 w-4" /> Tips
                 </h3>
-                <ul className="text-xs text-amber-600 space-y-1.5 font-medium">
+                <ul className="text-xs text-amber-600 space-y-1.5 font-medium font-poppins">
                   <li className="flex items-start gap-2">
                     <span className="text-green-500 font-bold flex-shrink-0">✓</span>
                     <span>Fill all required fields</span>
@@ -871,17 +987,17 @@ const QuestionPaperCreator = () => {
         </div>
       </div>
 
-      {/* Preview Modal - Add image/video display in preview */}
+      {/* Preview Modal */}
       {showPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-slide-up" style={{
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-slide-up font-poppins" style={{
           background: 'linear-gradient(135deg, rgba(219, 234, 254, 0.95) 0%, rgba(240, 249, 255, 0.98) 50%, rgba(219, 234, 254, 0.95) 100%)',
           backdropFilter: 'blur(20px)'
         }}>
-          <div className="max-w-4xl w-full max-h-[92vh] overflow-y-auto rounded-3xl shadow-2xl border-2 border-white" style={{
+          <div className="max-w-4xl w-full max-h-[92vh] overflow-y-auto rounded-3xl shadow-2xl border-2 border-white font-poppins select-text" style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 249, 255, 0.98) 50%, rgba(255, 255, 255, 0.95) 100%)',
             boxShadow: '0 25px 60px -12px rgba(59, 130, 246, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.8) inset, 0 1px 3px 0 rgba(59, 130, 246, 0.1) inset'
           }}>
-            <div className="sticky top-0 p-6 border-b-2 border-blue-100/60 flex items-center justify-between rounded-t-3xl z-10 shadow-lg" style={{
+            <div className="sticky top-0 p-6 border-b-2 border-blue-100/60 flex items-center justify-between rounded-t-3xl z-10 shadow-lg font-poppins" style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.98) 100%)',
               backdropFilter: 'blur(20px)'
             }}>
@@ -893,8 +1009,8 @@ const QuestionPaperCreator = () => {
                   <Eye className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">Exam Preview</h2>
-                  <p className="text-xs text-blue-600/70 font-semibold">Review before publishing</p>
+                  <h2 className="text-xl font-black bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent font-poppins">Exam Preview</h2>
+                  <p className="text-xs text-blue-600/70 font-semibold font-poppins">Review before publishing</p>
                 </div>
               </div>
               <button
@@ -908,39 +1024,39 @@ const QuestionPaperCreator = () => {
               </button>
             </div>
 
-            <div className="p-8">
-              <div className="text-center mb-8 p-8 rounded-3xl shadow-xl border-2 border-white" style={{
+            <div className="p-8 font-poppins">
+              <div className="text-center mb-8 p-8 rounded-3xl shadow-xl border-2 border-white font-poppins" style={{
                 background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.95) 100%)',
                 boxShadow: '0 20px 40px -10px rgba(59, 130, 246, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.8) inset'
               }}>
-                <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent mb-3">
+                <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent mb-3 font-poppins">
                   {examName || "Untitled Exam"}
                 </h1>
-                <p className="text-base text-blue-700 font-bold mb-6">
+                <p className="text-base text-blue-700 font-bold mb-6 font-poppins">
                   {examSubtitle || "No subtitle"}
                 </p>
-                <div className="flex items-center justify-center gap-4 text-sm font-bold flex-wrap mb-5">
+                <div className="flex items-center justify-center gap-4 text-sm font-bold flex-wrap mb-5 font-poppins">
                   {startDate && startTime && (
-                    <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-green-200 shadow-md" style={{
+                    <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-green-200 shadow-md font-poppins" style={{
                       background: 'linear-gradient(135deg, rgba(240, 253, 244, 0.95) 0%, rgba(220, 252, 231, 0.95) 100%)',
                       boxShadow: '0 8px 16px -4px rgba(34, 197, 94, 0.2)'
                     }}>
-                      <Clock className="h-4 w-4 text-green-600" />
-                      <span className="text-green-700">Start: {startDate} {startTime}</span>
+                      <CheckIcon className="h-4 w-4 text-green-600" />
+                      <span className="text-green-700 font-poppins">Start: {startDate} {startTime}</span>
                     </div>
                   )}
                   {endDate && endTime && (
-                    <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-red-200 shadow-md" style={{
+                    <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-red-200 shadow-md font-poppins" style={{
                       background: 'linear-gradient(135deg, rgba(254, 242, 242, 0.95) 0%, rgba(254, 226, 226, 0.95) 100%)',
                       boxShadow: '0 8px 16px -4px rgba(239, 68, 68, 0.2)'
                     }}>
-                      <Clock className="h-4 w-4 text-red-600" />
-                      <span className="text-red-700">End: {endDate} {endTime}</span>
+                      <X className="h-4 w-4 text-red-600" />
+                      <span className="text-red-700 font-poppins">End: {endDate} {endTime}</span>
                     </div>
                   )}
                 </div>
-                <div className="flex items-center justify-center gap-4 flex-wrap">
-                  <span className="text-sm px-5 py-2.5 rounded-full font-black shadow-lg border-2 border-blue-200" style={{
+                <div className="flex items-center justify-center gap-4 flex-wrap font-poppins">
+                  <span className="text-sm px-5 py-2.5 rounded-full font-black shadow-lg border-2 border-blue-200 font-poppins" style={{
                     background: 'linear-gradient(135deg, rgba(239, 246, 255, 0.95) 0%, rgba(219, 234, 254, 0.95) 100%)',
                     color: '#1e40af',
                     boxShadow: '0 8px 20px -4px rgba(59, 130, 246, 0.3)'
@@ -948,37 +1064,37 @@ const QuestionPaperCreator = () => {
                     Total Marks: {questions.reduce((sum, q) => sum + q.marks, 0)}
                   </span>
                   {totalTimeLimit > 0 && (
-                    <span className="text-sm px-5 py-2.5 rounded-full font-black shadow-lg flex items-center gap-2 text-white border-2 border-orange-300" style={{
+                    <span className="text-sm px-5 py-2.5 rounded-full font-black shadow-lg flex items-center gap-2 text-white border-2 border-orange-300 font-poppins" style={{
                       background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
                       boxShadow: '0 8px 20px -4px rgba(249, 115, 22, 0.4)'
                     }}>
-                      <Clock className="h-4 w-4" />
+                      <TimerIcon className="h-4 w-4" />
                       {totalTimeLimit} minutes
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-5 font-poppins">
                 {questions.map((q, index) => (
-                  <div key={q.id} className="p-6 rounded-2xl shadow-xl border-2 border-white transition-all hover:shadow-2xl" style={{
+                  <div key={q.id} className="p-6 rounded-2xl shadow-xl border-2 border-white transition-all hover:shadow-2xl font-poppins" style={{
                     background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)',
                     boxShadow: '0 12px 28px -8px rgba(59, 130, 246, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.8) inset'
                   }}>
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between mb-4 font-poppins">
                       <div className="flex gap-3 flex-1">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-lg flex-shrink-0" style={{
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-lg flex-shrink-0 font-poppins" style={{
                           background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                           boxShadow: '0 8px 20px -4px rgba(59, 130, 246, 0.4)'
                         }}>
                           {index + 1}
                         </div>
-                        <p className="font-bold text-blue-900 text-base leading-relaxed flex-1">
+                        <p className="font-bold text-blue-900 text-base leading-relaxed flex-1 font-poppins select-text">
                           {q.question || "No question"}
                         </p>
                       </div>
-                      <div className="flex gap-2 ml-4 flex-shrink-0">
-                        <span className="px-4 py-2 rounded-xl font-black border-2 border-blue-200 shadow-md text-xs whitespace-nowrap" style={{
+                      <div className="flex gap-2 ml-4 flex-shrink-0 font-poppins">
+                        <span className="px-4 py-2 rounded-xl font-black border-2 border-blue-200 shadow-md text-xs whitespace-nowrap font-poppins" style={{
                           background: 'linear-gradient(135deg, rgba(239, 246, 255, 0.95) 0%, rgba(219, 234, 254, 0.95) 100%)',
                           color: '#1e40af',
                           boxShadow: '0 6px 16px -4px rgba(59, 130, 246, 0.25)'
@@ -986,19 +1102,19 @@ const QuestionPaperCreator = () => {
                           {q.marks} Mark{q.marks !== 1 ? 's' : ''}
                         </span>
                         {q.timeLimit && q.timeLimit > 0 && (
-                          <span className="px-4 py-2 rounded-xl font-black flex items-center gap-1.5 border-2 border-orange-200 shadow-md text-xs whitespace-nowrap" style={{
+                          <span className="px-4 py-2 rounded-xl font-black flex items-center gap-1.5 border-2 border-orange-200 shadow-md text-xs whitespace-nowrap font-poppins" style={{
                             background: 'linear-gradient(135deg, rgba(255, 247, 237, 0.95) 0%, rgba(254, 243, 199, 0.95) 100%)',
                             color: '#c2410c',
                             boxShadow: '0 6px 16px -4px rgba(249, 115, 22, 0.25)'
                           }}>
-                            <Clock className="h-3.5 w-3.5" />
+                            <TimerIcon className="h-3.5 w-3.5" />
                             {q.timeLimit} min
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* NEW: Display image in preview */}
+                    {/* Display image in preview */}
                     {q.image && (
                       <div className="mb-4 ml-13">
                         <img
@@ -1009,7 +1125,7 @@ const QuestionPaperCreator = () => {
                       </div>
                     )}
 
-                    {/* NEW: Display video in preview */}
+                    {/* Display video in preview */}
                     {q.video && (
                       <div className="mb-4 ml-13">
                         <video
@@ -1021,9 +1137,9 @@ const QuestionPaperCreator = () => {
                     )}
 
                     {q.type === "MCQ" && (
-                      <div className="ml-13 space-y-3 mt-4">
+                      <div className="ml-13 space-y-3 mt-4 font-poppins">
                         {q.options.map((opt, i) => (
-                          <div key={i} className="flex items-center gap-3 p-3.5 rounded-xl text-sm border-2 border-blue-100 shadow-md transition-all hover:border-blue-200" style={{
+                          <div key={i} className="flex items-center gap-3 p-3.5 rounded-xl text-sm border-2 border-blue-100 shadow-md transition-all hover:border-blue-200 font-poppins select-text" style={{
                             background: 'rgba(255, 255, 255, 0.8)',
                             boxShadow: '0 4px 12px -2px rgba(59, 130, 246, 0.15)'
                           }}>
@@ -1032,23 +1148,23 @@ const QuestionPaperCreator = () => {
                               className="w-4 h-4"
                               disabled
                             />
-                            <span className="w-8 h-8 rounded-lg text-white font-black flex items-center justify-center text-sm shadow-md" style={{
+                            <span className="w-8 h-8 rounded-lg text-white font-black flex items-center justify-center text-sm shadow-md font-poppins" style={{
                               background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
                             }}>
                               {String.fromCharCode(65 + i)}
                             </span>
-                            <span className="text-blue-900 font-semibold">{opt || `Option ${i + 1}`}</span>
+                            <span className="text-blue-900 font-semibold font-poppins">{opt || `Option ${i + 1}`}</span>
                           </div>
                         ))}
                       </div>
                     )}
 
                     {q.type === "SAQ" && (
-                      <div className="ml-13 mt-4">
-                        <div className="border-2 border-dashed border-blue-300 rounded-xl p-5 shadow-md" style={{
+                      <div className="ml-13 mt-4 font-poppins">
+                        <div className="border-2 border-dashed border-blue-300 rounded-xl p-5 shadow-md font-poppins" style={{
                           background: 'rgba(239, 246, 255, 0.5)'
                         }}>
-                          <span className="text-sm text-blue-600 font-bold">Answer space (SAQ)</span>
+                          <span className="text-sm text-blue-600 font-bold font-poppins">Answer space (SAQ)</span>
                         </div>
                       </div>
                     )}
@@ -1062,37 +1178,37 @@ const QuestionPaperCreator = () => {
 
       {/* Publish Modal */}
       {showPublishModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-slide-up" style={{
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-slide-up font-poppins" style={{
           background: 'linear-gradient(135deg, rgba(219, 234, 254, 0.95) 0%, rgba(240, 249, 255, 0.98) 50%, rgba(219, 234, 254, 0.95) 100%)',
           backdropFilter: 'blur(20px)'
         }}>
-          <div className="max-w-2xl w-full rounded-3xl shadow-2xl border-2 border-white" style={{
+          <div className="max-w-2xl w-full rounded-3xl shadow-2xl border-2 border-white font-poppins" style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 249, 255, 0.98) 50%, rgba(255, 255, 255, 0.95) 100%)',
             boxShadow: '0 25px 60px -12px rgba(59, 130, 246, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.8) inset'
           }}>
-            <div className="p-7 border-b-2 border-blue-100/60 rounded-t-3xl" style={{
+            <div className="p-7 border-b-2 border-blue-100/60 rounded-t-3xl font-poppins" style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.98) 100%)'
             }}>
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg" style={{
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg font-poppins" style={{
                   background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                   boxShadow: '0 10px 25px -5px rgba(59, 130, 246, 0.4)'
                 }}>
                   <Send className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">Publish Exam</h2>
-                  <p className="text-xs text-blue-600/70 font-bold">Select rooms to share this exam</p>
+                  <h2 className="text-xl font-black bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent font-poppins">Publish Exam</h2>
+                  <p className="text-xs text-blue-600/70 font-bold font-poppins">Select rooms to share this exam</p>
                 </div>
               </div>
             </div>
 
-            <div className="p-7 max-h-80 overflow-y-auto">
+            <div className="p-7 max-h-80 overflow-y-auto font-poppins">
               <div className="space-y-3">
                 {rooms.map((room) => (
                   <label
                     key={room.id}
-                    className="flex items-center gap-4 p-4 rounded-2xl border-2 border-blue-100 cursor-pointer transition-all hover:border-blue-300 hover:scale-105 active:scale-95 shadow-md" style={{
+                    className="flex items-center gap-4 p-4 rounded-2xl border-2 border-blue-100 cursor-pointer transition-all hover:border-blue-300 hover:scale-105 active:scale-95 shadow-md font-poppins" style={{
                       background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)',
                       boxShadow: '0 8px 20px -6px rgba(59, 130, 246, 0.15)'
                     }}
@@ -1103,18 +1219,18 @@ const QuestionPaperCreator = () => {
                       onChange={() => toggleRoom(room.id)}
                       className="w-5 h-5 text-blue-500 accent-blue-500"
                     />
-                    <span className="font-bold text-blue-900 text-base">{room.name}</span>
+                    <span className="font-bold text-blue-900 text-base font-poppins">{room.name}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            <div className="p-7 border-t-2 border-blue-100/60 flex gap-4 justify-end rounded-b-3xl" style={{
+            <div className="p-7 border-t-2 border-blue-100/60 flex gap-4 justify-end rounded-b-3xl font-poppins" style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.98) 100%)'
             }}>
               <Button
                 variant="outline"
-                className="px-6 py-3 rounded-xl font-bold text-blue-700 border-2 border-blue-200 transition-all hover:scale-105 active:scale-95 shadow-md" style={{
+                className="px-6 py-3 rounded-xl font-bold text-blue-700 border-2 border-blue-200 transition-all hover:scale-105 active:scale-95 shadow-md font-poppins" style={{
                   background: 'rgba(255, 255, 255, 0.9)'
                 }}
                 onClick={() => setShowPublishModal(false)}
@@ -1124,7 +1240,7 @@ const QuestionPaperCreator = () => {
               <Button
                 onClick={handlePublish}
                 disabled={selectedRooms.length === 0}
-                className="px-6 py-3 rounded-xl font-black text-white border-0 shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed" style={{
+                className="px-6 py-3 rounded-xl font-black text-white border-0 shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-poppins" style={{
                   background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                   boxShadow: '0 12px 28px -8px rgba(59, 130, 246, 0.5)'
                 }}

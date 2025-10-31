@@ -45,7 +45,23 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30 font-propane select-none">
+      {/* Global Selection Disable */}
+      <style>{`
+        * {
+          user-select: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+        }
+        input, textarea, select, button {
+          user-select: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+        }
+      `}</style>
+
       <div className="min-h-screen">
         <DashboardHeader />
 
@@ -58,20 +74,20 @@ const Dashboard = () => {
               <img 
                 src="/e274568d-d4df-4a61-814e-cb87d8-unscreen.gif" 
                 alt="Animation" 
-                className="w-48 h-48 object-contain drop-shadow-2x1"
+                className="w-48 h-48 object-contain drop-shadow-2x1 select-none"
               />
             </div>
 
             {/* Toggle Button Section */}
             <div
-              className="inline-flex rounded-full p-1 shadow-md"
+              className="inline-flex rounded-full p-1 shadow-md font-propane select-none"
               style={{
                 background: "linear-gradient(135deg, #e8f0fb 0%, #dce8f8 100%)",
               }}
             >
               <button
                 onClick={() => setActiveTab("room")}
-                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
+                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 select-none ${
                   activeTab === "room"
                     ? "text-white shadow-lg"
                     : "text-slate-600 hover:text-slate-800"
@@ -85,15 +101,14 @@ const Dashboard = () => {
                     : {}
                 }
               >
-                <div className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
+                <div className="flex items-center gap-2 select-none">
                   Created Rooms
                 </div>
               </button>
 
               <button
                 onClick={() => setActiveTab("exam")}
-                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
+                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 select-none ${
                   activeTab === "exam"
                     ? "text-white shadow-lg"
                     : "text-slate-600 hover:text-slate-800"
@@ -107,8 +122,7 @@ const Dashboard = () => {
                     : {}
                 }
               >
-                <div className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
+                <div className="flex items-center gap-2 select-none">
                   Exam Rooms
                 </div>
               </button>
@@ -117,7 +131,7 @@ const Dashboard = () => {
 
           {/* Rounded Box Container */}
           <div 
-            className="rounded-3xl shadow-xl p-8 backdrop-blur-sm"
+            className="rounded-3xl shadow-xl p-8 backdrop-blur-sm font-propane select-none"
             style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)',
               border: '1px solid rgba(226, 232, 240, 0.5)'
@@ -125,11 +139,11 @@ const Dashboard = () => {
           >
             {/* Top Right Buttons - Only show when activeTab is "room" */}
             {activeTab === "room" && (
-              <div className="flex justify-end items-center gap-2 mb-6">
+              <div className="flex justify-end items-center gap-2 mb-6 select-none">
                 <CreateRoomDialog />
                 <Button 
                   variant="outline" 
-                  className="gap-2 hover:bg-blue-50 border-blue-200 hover:border-blue-300 hover:text-blue-600 transition-all duration-200"
+                  className="gap-2 hover:bg-blue-50 border-blue-200 hover:border-blue-300 hover:text-blue-600 transition-all duration-200 font-propane select-none"
                   onClick={() => navigate("/question-paper")}
                 >
                   <FileEdit className="h-4 w-4" />
@@ -141,28 +155,28 @@ const Dashboard = () => {
             {/* Reminder Banner - Only show when activeTab is "exam" */}
             {activeTab === "exam" && (
               <div 
-                className="mb-6 p-4 rounded-2xl backdrop-blur-md border-2 animate-pulse"
+                className="mb-6 p-4 rounded-2xl backdrop-blur-md border-2 animate-pulse font-propane select-none"
                 style={{
                   background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)',
                   borderColor: 'rgba(16, 185, 129, 0.3)'
                 }}
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 select-none">
                   <div 
-                    className="p-3 rounded-xl shadow-lg"
+                    className="p-3 rounded-xl shadow-lg select-none"
                     style={{
                       background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
                     }}
                   >
-                    <Bell className="h-6 w-6 text-white" />
+                    <Bell className="h-6 w-6 text-white select-none" />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <AlertCircle className="h-5 w-5 text-emerald-600" />
-                      <h3 className="text-lg font-bold text-slate-800">Exam Reminder</h3>
+                  <div className="flex-1 select-none">
+                    <div className="flex items-center gap-2 mb-1 select-none">
+                      <AlertCircle className="h-5 w-5 text-emerald-600 select-none" />
+                      <h3 className="text-lg font-bold text-slate-800 font-propane select-none">Exam Reminder</h3>
                     </div>
-                    <p className="text-sm text-slate-600">
-                      <span className="font-semibold text-emerald-700">Mathematics Final</span> is currently live! 
+                    <p className="text-sm text-slate-600 font-propane select-none">
+                      <span className="font-semibold text-emerald-700 select-none">Mathematics Final</span> is currently live! 
                       Click "Enter Exam" to join now. Don't miss your scheduled exams.
                     </p>
                   </div>
@@ -172,13 +186,13 @@ const Dashboard = () => {
 
             {/* Content Section */}
             {activeTab === "room" ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 select-none">
                 {rooms.map((room) => (
                   <RoomCard key={room.id} {...room} />
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 select-none">
                 {exams.map((exam) => (
                   <ExamCard key={exam.id} {...exam} />
                 ))}
