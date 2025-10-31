@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Clock, AlertCircle, Pause } from "lucide-react";
 import { toast } from "sonner";
 
-
-
 interface Question {
   id: string;
   question: string;
@@ -16,8 +14,6 @@ interface Question {
   image?: string;
   video?: string;
 }
-
-
 
 const TakeExam = () => {
   const navigate = useNavigate();
@@ -49,8 +45,6 @@ const TakeExam = () => {
     },
   ];
 
-
-
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [mainTimer, setMainTimer] = useState(7200);
@@ -59,23 +53,44 @@ const TakeExam = () => {
   );
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [isOnBreak, setIsOnBreak] = useState(false);
-  const [breakTime, setBreakTime] = useState(300); // 5 minutes break
-  const [mainTimerFrozen, setMainTimerFrozen] = useState(false);
-  const [questionTimerFrozen, setQuestionTimerFrozen] = useState(false);
+  const [breakTime, setBreakTime] = useState(300);
+  const [timerAudioPlaying, setTimerAudioPlaying] = useState(false);
   const [showOneMinWarning, setShowOneMinWarning] = useState(false);
   const [oneMinWarningShown, setOneMinWarningShown] = useState(false);
-
-
+  const [audioLoaded, setAudioLoaded] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
   const answeredCount = Object.keys(answers).length;
 
+  // Debug audio loading
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
 
+    const handleCanPlay = () => {
+      console.log("✅ Audio file loaded successfully");
+      setAudioLoaded(true);
+    };
 
-  // Play alert sound
+    const handleError = (e: Event) => {
+      console.error("❌ Audio load error:", audio.error);
+      toast.error("Timer sound file not found. Check /public/timer.mp3");
+    };
+
+    audio.addEventListener("canplay", handleCanPlay);
+    audio.addEventListener("error", handleError);
+
+    // Try to load the audio
+    audio.load();
+
+    return () => {
+      audio.removeEventListener("canplay", handleCanPlay);
+      audio.removeEventListener("error", handleError);
+    };
+  }, []);
+
   const playAlertSound = () => {
-    // Create a simple beep sound using Web Audio API
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
@@ -93,7 +108,6 @@ const TakeExam = () => {
     oscillator.stop(audioContext.currentTime + 0.5);
   };
 
-  // Play warning sound (higher frequency)
   const playWarningSound = () => {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
@@ -112,7 +126,36 @@ const TakeExam = () => {
     oscillator.stop(audioContext.currentTime + 0.8);
   };
 
+  // Timer audio control - plays when mainTimer <= 10 seconds
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
 
+    if (mainTimer <= 10 && mainTimer > 0 && !isOnBreak && audioLoaded) {
+      // Only play if audio is loaded and ready
+      if (!timerAudioPlaying) {
+        audio.currentTime = 0;
+        audio.loop = true;
+        
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log("🔊 Timer audio playing");
+              setTimerAudioPlaying(true);
+            })
+            .catch((error) => {
+              console.error("❌ Audio play error:", error);
+              toast.warning("Audio autoplay blocked. Sound may not work.");
+            });
+        }
+      }
+    } else if ((mainTimer > 10 || isOnBreak || mainTimer === 0) && timerAudioPlaying) {
+      audio.pause();
+      audio.currentTime = 0;
+      setTimerAudioPlaying(false);
+    }
+  }, [mainTimer, isOnBreak, audioLoaded, timerAudioPlaying]);
 
   // Handle window visibility change during break
   useEffect(() => {
@@ -128,7 +171,6 @@ const TakeExam = () => {
       }
     };
 
-
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isOnBreak) {
         e.preventDefault();
@@ -139,18 +181,14 @@ const TakeExam = () => {
       }
     };
 
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("beforeunload", handleBeforeUnload);
-
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [isOnBreak]);
-
-
 
   // Check for 1 minute warning
   useEffect(() => {
@@ -161,25 +199,19 @@ const TakeExam = () => {
     }
   }, [mainTimer, oneMinWarningShown, isOnBreak]);
 
-
-
   // Main timer
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!mainTimerFrozen) {
-        setMainTimer((prev) => {
-          if (prev <= 1) {
-            handleAutoSubmit();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }
+      setMainTimer((prev) => {
+        if (prev <= 1) {
+          handleAutoSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
     return () => clearInterval(interval);
-  }, [mainTimerFrozen]);
-
-
+  }, []);
 
   // Question timer reset
   useEffect(() => {
@@ -188,11 +220,9 @@ const TakeExam = () => {
     }
   }, [currentQuestionIndex]);
 
-
-
   // Question timer
   useEffect(() => {
-    if (currentQuestion.timeLimit && questionTimer > 0 && !questionTimerFrozen) {
+    if (currentQuestion.timeLimit && questionTimer > 0) {
       const interval = setInterval(() => {
         setQuestionTimer((prev) => {
           if (prev <= 1) {
@@ -207,9 +237,7 @@ const TakeExam = () => {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [questionTimer, currentQuestionIndex, questionTimerFrozen]);
-
-
+  }, [questionTimer, currentQuestionIndex, isLastQuestion]);
 
   // Break timer
   useEffect(() => {
@@ -217,10 +245,11 @@ const TakeExam = () => {
       const interval = setInterval(() => {
         setBreakTime((prev) => {
           if (prev <= 1) {
-            toast.success("Break time over! Resuming exam...");
+            toast.warning("Break time over! Auto-submitting exam...");
             setIsOnBreak(false);
-            setMainTimerFrozen(false);
-            setQuestionTimerFrozen(false);
+            setTimeout(() => {
+              handleAutoSubmit();
+            }, 1500);
             return 300;
           }
           return prev - 1;
@@ -229,8 +258,6 @@ const TakeExam = () => {
       return () => clearInterval(interval);
     }
   }, [isOnBreak, breakTime]);
-
-
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -241,13 +268,9 @@ const TakeExam = () => {
       .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-
-
   const handleAnswerChange = (value: string) => {
     setAnswers({ ...answers, [currentQuestion.id]: value });
   };
-
-
 
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
@@ -255,37 +278,29 @@ const TakeExam = () => {
     }
   };
 
-
-
   const handleAutoSubmit = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
     toast.error("Time's up! Exam auto-submitted.");
     setTimeout(() => {
       navigate(`/exam/${examId}/submitted`);
     }, 2000);
   };
 
-
-
   const handleSubmit = () => {
     setShowSubmitModal(true);
   };
 
-
-
   const handleBreak = () => {
     setIsOnBreak(true);
-    setMainTimerFrozen(true);
-    setQuestionTimerFrozen(true);
-    setBreakTime(300); // Reset to 5 minutes
-    toast.info("Break started. Timers are frozen.");
+    setBreakTime(300);
+    toast.info("Break started. Main timers continue running.");
   };
-
-
 
   const handleResumeExam = () => {
     setIsOnBreak(false);
-    setMainTimerFrozen(false);
-    setQuestionTimerFrozen(false);
     toast.success("Exam resumed!");
   };
 
@@ -294,16 +309,16 @@ const TakeExam = () => {
     toast.info("Continue with your exam.");
   };
 
-
-
   const confirmSubmit = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
     toast.success("Exam submitted successfully!");
     setTimeout(() => {
       navigate(`/exam/${examId}/submitted`);
     }, 1500);
   };
-
-
 
   return (
     <div className="h-screen flex flex-col bg-white overflow-hidden select-none">
@@ -333,8 +348,6 @@ const TakeExam = () => {
         }
       `}</style>
 
-
-
       {/* Top Bar - Fixed Height */}
       <div className={`${mainTimer <= 60 && !isOnBreak ? 'bg-red-600' : 'bg-slate-800'} text-white px-6 py-3 flex items-center justify-between border-b-2 ${mainTimer <= 60 && !isOnBreak ? 'border-red-700' : 'border-slate-900'} flex-shrink-0 transition-colors duration-300`}>
         <div className="flex items-center gap-4">
@@ -342,6 +355,9 @@ const TakeExam = () => {
             <Clock className={`w-4 h-4 ${mainTimer <= 60 && !isOnBreak ? 'animate-pulse' : ''}`} />
             <span className="text-sm font-semibold">Time:</span>
             <span className={`font-mono text-base font-bold ${mainTimer <= 60 && !isOnBreak ? 'animate-pulse' : ''}`}>{formatTime(mainTimer)}</span>
+            {audioLoaded && mainTimer <= 10 && (
+              <span className="ml-4 text-xs bg-green-500 px-2 py-1 rounded">🔊 Audio Active</span>
+            )}
           </div>
           {currentQuestion.timeLimit && (
             <>
@@ -358,8 +374,6 @@ const TakeExam = () => {
           Question {currentQuestionIndex + 1} of {questions.length}
         </div>
       </div>
-
-
 
       {/* Main Content - Flexible Height */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -384,8 +398,6 @@ const TakeExam = () => {
             </div>
           </div>
 
-
-
           {/* Image/Video */}
           {currentQuestion.image && (
             <div className="mb-6 border-2 border-slate-300 p-2 flex-shrink-0">
@@ -397,8 +409,6 @@ const TakeExam = () => {
             </div>
           )}
 
-
-
           {currentQuestion.video && (
             <div className="mb-6 border-2 border-slate-300 p-2 flex-shrink-0">
               <video
@@ -408,8 +418,6 @@ const TakeExam = () => {
               />
             </div>
           )}
-
-
 
           {/* Answer Section - Takes remaining space */}
           <div className="flex-1 flex flex-col min-h-0">
@@ -468,8 +476,6 @@ const TakeExam = () => {
           </div>
         </div>
 
-
-
         {/* Bottom Bar - Fixed Height */}
         <div className="border-t-2 border-slate-200 bg-slate-50 px-8 py-4 flex items-center justify-between flex-shrink-0">
           <div className="text-sm text-slate-600">
@@ -504,8 +510,6 @@ const TakeExam = () => {
           </div>
         </div>
       </div>
-
-
 
       {/* 1 Minute Warning Modal */}
       {showOneMinWarning && (
@@ -551,8 +555,6 @@ const TakeExam = () => {
         </div>
       )}
 
-
-
       {/* Break Modal - Overlay */}
       {isOnBreak && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -567,7 +569,7 @@ const TakeExam = () => {
                   Exam is Paused
                 </p>
                 <p className="text-sm text-slate-600">
-                  All timers are frozen. Take a break!
+                  Main timers still running. Return before break expires!
                 </p>
               </div>
               <div className="bg-orange-100 border-2 border-orange-300 p-6 mb-8 rounded">
@@ -584,7 +586,7 @@ const TakeExam = () => {
                   ⚠️ Do not exit the browser or minimize the window
                 </p>
                 <p className="text-xs text-red-600 mt-1">
-                  If you exit, the exam will be auto-submitted with sound alert
+                  If you exit, the exam will be auto-submitted
                 </p>
               </div>
               <Button
@@ -597,8 +599,6 @@ const TakeExam = () => {
           </div>
         </div>
       )}
-
-
 
       {/* Submit Modal */}
       {showSubmitModal && (
@@ -641,12 +641,15 @@ const TakeExam = () => {
         </div>
       )}
 
-
-      <audio ref={audioRef} />
+      {/* Timer Audio Element - Must preload */}
+      <audio
+        ref={audioRef}
+        src="/timer.mp3"
+        preload="auto"
+        crossOrigin="anonymous"
+      />
     </div>
   );
 };
-
-
 
 export default TakeExam;
